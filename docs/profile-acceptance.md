@@ -8,6 +8,13 @@ fingerprint matches.
 
 ## Version 0.2.0 live acceptance
 
+Version 0.2.0 is [published on PyPI](https://pypi.org/project/requests-utls/0.2.0/).
+The [release workflow](https://github.com/chuu3/requests-utls-python/actions/runs/34036940122)
+built and tested all five platform wheels before publishing them. The separate
+[public-install smoke report](pypi-0.2.0-smoke.json) records a fresh macOS arm64
+installation from the public index, with no external Go toolchain or native
+library override, and checks the installed package against a local TLS peer.
+
 The [unchanged strict report](profile-acceptance-0.2.0.json) covers 1,010 source
 files with one fixed native artifact and comparison script:
 

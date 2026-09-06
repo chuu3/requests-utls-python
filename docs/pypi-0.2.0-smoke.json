@@ -1,0 +1,236 @@
+{
+  "checked_at_utc": "2026-09-06T13:58:51.757243+00:00",
+  "outcome": "passed",
+  "package_version": "0.2.0",
+  "runtime": {
+    "python": "3.11.9",
+    "implementation": "CPython",
+    "os": "Darwin",
+    "os_version": "26.6.2",
+    "architecture": "arm64"
+  },
+  "bundled_engine": {
+    "engine_version": "v0.2.0",
+    "engine_commit": "177a88653b1731fb6e21227c4850de78a5337b65",
+    "go_version": "go1.27.1",
+    "abi_version": 1,
+    "source_dirty": false,
+    "wheel_platform": "macosx_13_0_arm64",
+    "library": "native/librequests_utls.dylib",
+    "sha256": "0aacc46d5d8108014c8089cf3e8a24730f220b2d16ddb5f3515ea508b88eab53"
+  },
+  "fixture": {
+    "kind": "independent_local_test_peer",
+    "sha256": "8fcf9d1bffaeb614cfeeae95505bed7457fb236e8977f513f900253e1f84b768",
+    "remote_origin_requests": false,
+    "ca_verification_enabled": true
+  },
+  "checks": [
+    {
+      "name": "clean_venv_and_import",
+      "passed": true,
+      "installed_version": "0.2.0",
+      "requests_utls_environment_variables_absent": true,
+      "pythonpath_absent": true,
+      "go_executable_absent_from_path": true,
+      "imported_from_venv": true
+    },
+    {
+      "name": "bundled_engine_and_builtin_profile",
+      "passed": true,
+      "all_payload_hashes_verified": true,
+      "abi_version": 1
+    },
+    {
+      "name": "h2_connection_reuse",
+      "passed": true,
+      "request_count": 2
+    },
+    {
+      "name": "h2_response_cookies_and_request_isolation",
+      "passed": true
+    },
+    {
+      "name": "h2_duplicate_cookie_order_and_argument_snapshot",
+      "passed": true
+    },
+    {
+      "name": "h2_all_content_decoders",
+      "passed": true,
+      "codings": [
+        "gzip",
+        "deflate",
+        "raw-deflate",
+        "br",
+        "zstd",
+        "gzip,br"
+      ]
+    },
+    {
+      "name": "h2_raw_content_opt_out",
+      "passed": true
+    },
+    {
+      "name": "h2_decoder_limits_corruption_and_recovery",
+      "passed": true
+    },
+    {
+      "name": "h2_authenticated_proxy_origin_isolation",
+      "passed": true
+    },
+    {
+      "name": "h2_shared_session_concurrent_isolation",
+      "passed": true,
+      "request_count": 24,
+      "workers": 8
+    },
+    {
+      "name": "h2_async_concurrent_isolation",
+      "passed": true,
+      "request_count": 24,
+      "completion_threads": 1
+    },
+    {
+      "name": "h1_connection_reuse",
+      "passed": true,
+      "request_count": 2
+    },
+    {
+      "name": "h1_response_cookies_and_request_isolation",
+      "passed": true
+    },
+    {
+      "name": "h1_duplicate_cookie_order_and_argument_snapshot",
+      "passed": true
+    },
+    {
+      "name": "h1_all_content_decoders",
+      "passed": true,
+      "codings": [
+        "gzip",
+        "deflate",
+        "raw-deflate",
+        "br",
+        "zstd",
+        "gzip,br"
+      ]
+    },
+    {
+      "name": "h1_raw_content_opt_out",
+      "passed": true
+    },
+    {
+      "name": "h1_decoder_limits_corruption_and_recovery",
+      "passed": true
+    },
+    {
+      "name": "h1_authenticated_proxy_origin_isolation",
+      "passed": true
+    },
+    {
+      "name": "h1_shared_session_concurrent_isolation",
+      "passed": true,
+      "request_count": 24,
+      "workers": 8
+    },
+    {
+      "name": "h1_async_concurrent_isolation",
+      "passed": true,
+      "request_count": 24,
+      "completion_threads": 1
+    },
+    {
+      "name": "default_alpn_http1_fallback",
+      "passed": true
+    }
+  ],
+  "passed_checks": 21,
+  "smoke_script_sha256": "12ad9ca97135143814a35793b00523167dde6b652621aff9ba92e328c2549a4f",
+  "scope": "Local smoke executed on macOS arm64 only; other wheel digests are publication inventory, not local execution claims.",
+  "report_schema_version": 1,
+  "publication": {
+    "release_workflow": "https://github.com/chuu3/requests-utls-python/actions/runs/34036940122",
+    "pypi_json": "https://pypi.org/pypi/requests-utls/0.2.0/json",
+    "simple_index": "https://pypi.org/simple/requests-utls/",
+    "simple_index_status": 200,
+    "simple_index_contains_version": true,
+    "public_wheels": [
+      {
+        "filename": "requests_utls-0.2.0-py3-none-macosx_13_0_arm64.whl",
+        "sha256": "fd7a2d42e73e37825e2dee4f67c225dfb9f7ee4a55424e44480739ef60e70f47",
+        "public_url": "https://files.pythonhosted.org/packages/c3/bd/b481b89e51d490288dd25c4883680c50b2aac1600efd7d224574bb91edc0/requests_utls-0.2.0-py3-none-macosx_13_0_arm64.whl",
+        "download_sha256_verified": true,
+        "requires_python": ">=3.11",
+        "upload_time_utc": "2026-09-06T13:47:12.662343Z"
+      },
+      {
+        "filename": "requests_utls-0.2.0-py3-none-macosx_13_0_x86_64.whl",
+        "sha256": "16deb85470f5dbf7fa777e5f2baa2cc3b256ff047335ea6de7dba64cce5dd73c",
+        "public_url": "https://files.pythonhosted.org/packages/91/00/de389273c27f97390c8f212f1429057ec43c82bad7b7d11c48d19f91b1ac/requests_utls-0.2.0-py3-none-macosx_13_0_x86_64.whl",
+        "download_sha256_verified": true,
+        "requires_python": ">=3.11",
+        "upload_time_utc": "2026-09-06T13:47:14.413834Z"
+      },
+      {
+        "filename": "requests_utls-0.2.0-py3-none-manylinux_2_28_aarch64.whl",
+        "sha256": "972be698ed04d333dfa1a5aae9f8c4ac81f1446b2b6181294774c75c5cd7b779",
+        "public_url": "https://files.pythonhosted.org/packages/8c/2f/881b87ff8f57e125cb5b0fe1fa97ca52f9b071d00c19fc543c5172d71a86/requests_utls-0.2.0-py3-none-manylinux_2_28_aarch64.whl",
+        "download_sha256_verified": true,
+        "requires_python": ">=3.11",
+        "upload_time_utc": "2026-09-06T13:47:16.551426Z"
+      },
+      {
+        "filename": "requests_utls-0.2.0-py3-none-manylinux_2_28_x86_64.whl",
+        "sha256": "3500a6a084ae8d222412c426e415c01a729a9934b534375272c10b8b6004d011",
+        "public_url": "https://files.pythonhosted.org/packages/81/7c/a78952af46144be089040f581f4d4ff7cd60537b8e25a2ff038122849178/requests_utls-0.2.0-py3-none-manylinux_2_28_x86_64.whl",
+        "download_sha256_verified": true,
+        "requires_python": ">=3.11",
+        "upload_time_utc": "2026-09-06T13:47:18.118446Z"
+      },
+      {
+        "filename": "requests_utls-0.2.0-py3-none-win_amd64.whl",
+        "sha256": "ccdd3e34123ecbeb9ba00333eb8c0e5cc22fb413f14a35bf016b9c07d0018fa8",
+        "public_url": "https://files.pythonhosted.org/packages/f1/7d/af5bd4d35e42c58e1ddc9e0253d346749a14c6c297b10b3c8fba759fb789/requests_utls-0.2.0-py3-none-win_amd64.whl",
+        "download_sha256_verified": true,
+        "requires_python": ">=3.11",
+        "upload_time_utc": "2026-09-06T13:47:20.928840Z"
+      }
+    ],
+    "inventory_verified_at_utc": "2026-09-06T14:00:39.124908+00:00"
+  },
+  "installation": {
+    "index_url": "https://pypi.org/simple",
+    "fresh_venv": true,
+    "pip_isolated": true,
+    "pip_no_cache_dir": true,
+    "only_binary": true,
+    "version_pinned": "requests-utls==0.2.0",
+    "exit_code": 0,
+    "installed_wheel": "requests_utls-0.2.0-py3-none-macosx_13_0_arm64.whl",
+    "installed_wheel_sha256": "fd7a2d42e73e37825e2dee4f67c225dfb9f7ee4a55424e44480739ef60e70f47",
+    "dependencies": [
+      {
+        "name": "cffi",
+        "version": "2.1.1"
+      },
+      {
+        "name": "pycparser",
+        "version": "3.0"
+      },
+      {
+        "name": "requests-utls",
+        "version": "0.2.0"
+      }
+    ],
+    "initial_attempt": {
+      "outcome": "version_not_yet_visible",
+      "pip_available_versions": [
+        "0.1.0"
+      ],
+      "subsequent_public_index_and_installation_succeeded": true,
+      "interpretation": "Consistent with temporary index propagation; not a platform compatibility rejection."
+    }
+  },
+  "smoke_process_exit_code": 0,
+  "engine_matches_committed_lock": true
+}
