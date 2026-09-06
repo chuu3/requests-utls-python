@@ -1,34 +1,50 @@
 # requests-utls — Python client
 
 Python 3.11+ client for the separately maintained [requests-utls Go engine](https://github.com/chuu3/requests-utls).
-The Python project contains no Go source and never builds or imports a sibling
-checkout. It uses CFFI ABI 1 to load an independently built shared library.
+Platform wheels include a prebuilt Go shared library, a Chrome 152 profile and
+the engine's dependency licenses. Installation does not require Go, a compiler,
+GitHub access, or a separately downloaded engine. Python and Go remain separate
+projects, connected through CFFI ABI 1.
 
 This is a **0.1.0 prototype**: HTTPS with HTTP/2, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
 async requests, proxy authentication, and explicit resource lifecycle.
 
-See [verification results](docs/verification.md): 55 passing tests, independent
-wheel installation, and live sync/async fingerprint checks through a test proxy proxy.
+See [verification results](docs/verification.md) for concurrent requests and live
+fingerprint checks, and [packaging and releases](docs/releases.md) for wheel builds.
 
-## Install and connect the engine
+## Install
 
 ```sh
-python -m pip install -e '.[test]'
-export REQUESTS_UTLS_LIBRARY=/absolute/path/to/librequests_utls.dylib
+python -m pip install requests-utls
 ```
 
-Use `librequests_utls.so` on Linux and `librequests_utls.dll` on Windows.
-The current Python-only wheel requires a separately distributed native engine
-and profile. Build those in the Go project using its documented build targets,
-or consume its trusted release artifacts. The loader first uses `library_path=`,
-then `REQUESTS_UTLS_LIBRARY`, then a library under `requests_utls/native/` if a
-future platform wheel bundles one. An ABI mismatch fails immediately. Importing
-`requests_utls` alone does not load native code.
+| Platform | Architecture | Minimum system |
+| --- | --- | --- |
+| Linux | x86_64, ARM64 | glibc 2.28 |
+| macOS | Apple Silicon, Intel | macOS 13 |
+| Windows | x64 | Windows 10 / Server 2016 |
 
-Platform wheel construction is not implemented yet. The current build includes
-only Python files and `py.typed`; shared libraries are excluded so a binary cannot
-accidentally be shipped with the universal `py3-none-any` wheel tag.
+Python 3.11 or newer is required. Linux musl/Alpine and Windows ARM64 wheels are
+not provided. Releases contain platform wheels only; unsupported systems fail
+installation instead of trying to compile Go locally.
+
+```python
+from requests_utls import Profile, Session
+
+with Session(profile=Profile.builtin("chrome_152")) as session:
+    response = session.get("https://tls.peet.ws/api/all")
+    print(response.json())
+```
+
+`Profile.builtin(...)` loads an installed profile without network access. Custom
+profiles still work through `Profile.from_file(...)` and `Profile.from_dict(...)`.
+The bundled capture retains the engine's documented profile limitations below.
+
+For engine development, the loader also accepts `library_path=` or
+`REQUESTS_UTLS_LIBRARY`, in that priority order, ahead of the bundled library.
+An ABI mismatch fails immediately. Importing `requests_utls` alone does not load
+native code.
 
 ## Synchronous requests and request-local order
 
@@ -36,7 +52,7 @@ accidentally be shipped with the universal `py3-none-any` wheel tag.
 from concurrent.futures import ThreadPoolExecutor
 from requests_utls import Profile, Session
 
-profile = Profile.from_file("chrome_152.json")
+profile = Profile.builtin("chrome_152")
 
 with Session(profile=profile, timeout=30) as session:
     def fetch(index):
@@ -107,7 +123,7 @@ connections and cache. To keep new connections on full handshakes while still
 reusing existing connections, set:
 
 ```python
-with Session(profile="chrome_152.json", session_resumption=False) as session:
+with Session(profile=Profile.builtin("chrome_152"), session_resumption=False) as session:
     first = session.get(url)
     second = session.get(url)
 ```
@@ -119,10 +135,10 @@ early data.
 
 ```python
 import asyncio
-from requests_utls import AsyncSession
+from requests_utls import AsyncSession, Profile
 
 async def main():
-    async with AsyncSession(profile="chrome_152.json") as session:
+    async with AsyncSession(profile=Profile.builtin("chrome_152")) as session:
         responses = await asyncio.gather(*(
             session.get("https://tls.peet.ws/api/all", headers_order=["accept"],
                         headers={"accept": "application/json"})
@@ -147,10 +163,10 @@ and other concurrent closes; outstanding requests fail with `SessionClosedError`
 
 ```python
 import os
-from requests_utls import Session
+from requests_utls import Profile, Session
 
 with Session(
-    profile="chrome_152.json",
+    profile=Profile.builtin("chrome_152"),
     proxy="http://proxy.example:8080",
     proxy_auth=(os.environ["PROXY_USERNAME"], os.environ["PROXY_PASSWORD"]),
     verify=True,
@@ -223,6 +239,7 @@ cannot be unloaded while Go threads exist.
 ## Development
 
 ```sh
+python -m pip install -e '.[test]'
 python -m pytest tests/test_models.py tests/test_session_options.py
 ```
 
@@ -237,6 +254,13 @@ REQUESTS_UTLS_TEST_PEER=/absolute/path/to/requests-utls-testpeer \
 python -m pytest -q
 ```
 
-Use the library filename for your platform. GitHub Actions runs independent
-Python unit tests on Python 3.11–3.14; native integration tests require the
-explicit artifacts above and are not silently skipped as part of that unit job.
+Use the library filename for your platform. Editable installations use external
+engine artifacts and profile files. Ordinary wheel builds require an explicit
+audited engine artifact; `REQUESTS_UTLS_PURE_PYTHON=1` is a development-only escape
+hatch for Python unit tests and must not be used for releases.
+
+GitHub Actions runs Python unit tests on Python 3.11–3.14. The release workflow
+builds and audits all five native wheels, installs each in a fresh environment,
+and runs the full suite with its bundled library before publication. See
+[packaging and releases](docs/releases.md) for the pinned engine and publishing
+configuration.

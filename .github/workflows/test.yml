@@ -10,17 +10,19 @@ permissions:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    env:
+      REQUESTS_UTLS_PURE_PYTHON: "1"
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install Python package and test dependencies
         run: python -m pip install '.[test]'
       - name: Run unit tests without native artifacts
-        run: python -m pytest tests/test_models.py tests/test_session_options.py -q
+        run: python -m pytest tests/test_models.py tests/test_session_options.py tests/test_build_backend.py tests/test_bundled.py tests/test_finalize_wheel.py -q

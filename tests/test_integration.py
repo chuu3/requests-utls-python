@@ -374,6 +374,7 @@ for cycle in range(2):
     assert response.json()["headers"] == [["x-cycle", str(cycle)]]
     session.close()
     native_reference = weakref.ref(session._native)
+    path = os.path.realpath(next(key for key, value in _native._libraries.items() if value is session._native))
     del response, session
     _native._libraries.clear()
     _native._loaded_handles.clear()
@@ -384,7 +385,6 @@ for cycle in range(2):
     # until one of its dormant runtime threads next wakes. NOLOAD never loads
     # the image, making this assertion deterministic on supported platforms.
     probe = _native.FFI()
-    path = os.path.realpath(os.environ["REQUESTS_UTLS_LIBRARY"])
     if sys.platform == "win32":
         probe.cdef("void * __stdcall GetModuleHandleW(const wchar_t *);")
         loader = probe.dlopen("kernel32.dll")

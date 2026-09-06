@@ -1,4 +1,6 @@
 include LICENSE README.md
+include build_backend.py _build_support.py setup.py
 recursive-include tests *.py *.json
 recursive-include examples *.py
 recursive-include docs *.md *.json
+recursive-include scripts *.py

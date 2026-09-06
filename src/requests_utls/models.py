@@ -97,6 +97,20 @@ class Profile:
         return cls(json.loads(Path(path).read_bytes()))
 
     @classmethod
+    def builtin(cls, name: str) -> Profile:
+        """Load a profile shipped in the installed wheel, without network access."""
+        from importlib.resources import files
+
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", name):
+            raise InvalidRequestError("builtin profile name must contain only letters, digits, underscores or hyphens")
+        resource = files("requests_utls").joinpath("profiles", name + ".json")
+        try:
+            data = resource.read_bytes()
+        except FileNotFoundError:
+            raise InvalidRequestError(f"bundled profile {name!r} is unavailable in this installation") from None
+        return cls(json.loads(data))
+
+    @classmethod
     def from_peet(cls, capture, *, allow_opaque=False, library_path=None) -> Profile:
         """Import one tls.peet.ws capture via the independently installed engine."""
         from ._native import get_native, result_error

@@ -16,6 +16,15 @@ import pytest
 def peer(tmp_path_factory):
     binary = os.environ.get("REQUESTS_UTLS_TEST_PEER")
     library = os.environ.get("REQUESTS_UTLS_LIBRARY")
+    bundled = os.environ.get("REQUESTS_UTLS_BUNDLED_TEST") == "1"
+    if bundled:
+        import requests_utls
+        import sys
+
+        assert not library, "bundled wheel tests must not override the native library path"
+        filename = {"darwin": "librequests_utls.dylib", "win32": "librequests_utls.dll"}.get(sys.platform, "librequests_utls.so")
+        library = str(Path(requests_utls.__file__).parent / "native" / filename)
+        assert binary, "bundled wheel integration requires an explicit test peer artifact"
     if not binary or not library:
         pytest.skip("set REQUESTS_UTLS_TEST_PEER and REQUESTS_UTLS_LIBRARY for native integration tests")
     assert Path(binary).is_file(), f"test peer binary does not exist: {binary}"
