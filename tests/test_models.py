@@ -14,6 +14,7 @@ def test_headers_preserve_interleaving_case_insensitive_lookup_and_snapshot():
     headers = Headers(source)
     source.clear()
     assert headers.multi_items() == [("x-a", "1"), ("x-b", "2"), ("x-a", "3")]
+    assert headers.raw_items() == [("X-A", "1"), ("x-b", "2"), ("x-a", "3")]
     assert headers.get_list("X-A") == ["1", "3"]
     assert headers["X-A"] == "1, 3"
     assert list(headers) == ["x-a", "x-b"]
@@ -72,8 +73,8 @@ def test_prepare_parallel_request_snapshots_without_native_engine():
         assert order[0] == "X-A"
         metadata = json.loads(encoded)
         assert metadata["headers_order"] == ["x-a", "x-b", "x-a", "x-overridden"]
-        assert metadata["headers"][1] == {"name": "x-overridden", "value": str(index)}
-        assert metadata["headers"][-2] == {"name": "cookie", "value": f"fixed=base; request={index}"}
+        assert metadata["headers"][1] == {"name": "X-Overridden", "value": str(index)}
+        assert metadata["headers"][-2] == {"name": "Cookie", "value": f"fixed=base; request={index}"}
         assert json.loads(body) == {"id": index}
 
     with ThreadPoolExecutor(max_workers=16) as executor:

@@ -1,20 +1,22 @@
 """Python client for the independently released requests-utls Go engine."""
 
 from .exceptions import (
-    ForkSafetyError, HTTPError, InvalidRequestError, NativeLibraryError,
+    CookieConflictError, ForkSafetyError, HTTPError, InvalidRequestError, NativeLibraryError,
     QueueFullError, RequestCancelledError, RequestError, ResponseTooLargeError,
     SessionClosedError, Timeout, TransportError,
 )
 from .models import Headers, Profile, Response
+from .cookies import Cookie, ResponseCookies
 from .session import AsyncSession, Session
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "AsyncSession", "Session", "Headers", "Profile", "Response", "get", "post",
     "RequestError", "InvalidRequestError", "SessionClosedError", "QueueFullError",
     "RequestCancelledError", "Timeout", "ResponseTooLargeError", "TransportError",
-    "NativeLibraryError", "ForkSafetyError", "HTTPError",
+    "NativeLibraryError", "ForkSafetyError", "HTTPError", "CookieConflictError",
+    "Cookie", "ResponseCookies",
 ]
 
 

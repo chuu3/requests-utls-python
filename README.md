@@ -6,7 +6,7 @@ the engine's dependency licenses. Installation does not require Go, a compiler,
 GitHub access, or a separately downloaded engine. Python and Go remain separate
 projects, connected through CFFI ABI 1.
 
-This is a **0.1.0 prototype**: HTTPS with HTTP/2, immutable Session defaults,
+This is a **0.2.0 prototype**: HTTP/2 and HTTP/1.1, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
 async requests, proxy authentication, and explicit resource lifecycle.
 
@@ -73,7 +73,10 @@ cookie jar. Native submission also copies the metadata and request body before
 returning. As with other APIs, do not mutate a supplied collection while that
 same call is taking its snapshot.
 
-Header names are normalized to lowercase. An omitted or empty order preserves
+Request header spelling is preserved for HTTP/1.1; HTTP/2 lowercases names on
+the wire. Lookup and `headers_order` matching are case-insensitive.
+`Headers.multi_items()` returns lowercase names, while `Headers.raw_items()`
+retains input spelling. An omitted or empty order preserves
 the exact input sequence. Listing a name once groups all its values together;
 listing it multiple times places one occurrence at each position, and the number
 of entries must equal its supplied occurrences. Missing names are ignored.
@@ -131,6 +134,19 @@ with Session(profile=Profile.builtin("chrome_152"), session_resumption=False) as
 The same option applies to `AsyncSession`. Resumption does not enable TLS 0-RTT
 early data.
 
+`force_http1=True` selects HTTP/1.1 and changes the TLS advertisement to match,
+including ALPN and removal of HTTP/2 application settings. It therefore changes
+the captured TLS fingerprint. Without this override, the engine supports
+HTTP/1.1 when selected by the TLS negotiation; plain `http://` URLs also use
+HTTP/1.1. Supplied header spelling, duplicate fields and request-local order
+are preserved by the HTTP/1.1 transport.
+
+`random_ja3=True` shuffles eligible TLS extensions for each new connection,
+keeping GREASE, padding and PSK positions fixed. It does not mutate the profile
+or change a connection's existing handshake. The default is `False`, which
+retains the profile's extension order. Both options, `session_resumption`, and
+`decode_content` require actual Boolean values.
+
 ## Async requests
 
 ```python
@@ -186,17 +202,46 @@ Environment proxy variables and `.netrc` are not consulted.
 ## Requests, responses and limits
 
 `request`, `get`, `post`, `put`, `patch`, `delete`, `head` and `options` accept
-`headers`, `headers_order`, `cookies`, `params`, `data`, `json` and `timeout`.
+`headers`, `headers_order`, `cookies`, `params`, `data`, `json`, `timeout`, and
+`allow_redirects=False`. Redirect following is not implemented;
+`allow_redirects=True` raises `InvalidRequestError`.
 `data` supports bytes, string, or a form mapping; `json` and non-None `data` are
 mutually exclusive. JSON and form encoding add Content-Type only when absent.
 No User-Agent or Accept-Encoding is added by Python. Timeouts are seconds,
 including native queue time; `None` disables the per-request deadline.
 
 Response exposes `status_code`, immutable `headers`, `content`, `text`, `json()`,
-`url`, `protocol`, `ok`, and `raise_for_status()`. Use
+`url`, `protocol`, `decoded`, `cookies`, `ok`, and `raise_for_status()`. Use
 `response.headers.get_list("set-cookie")` for separate values and
 `response.headers.multi_items()` for the complete field sequence. Mapping lookup
 joins duplicates with `, ` and must not be used to parse Set-Cookie.
+
+`Session(decode_content=True)` is the default. The Go engine decodes gzip,
+deflate (zlib or raw), Brotli and Zstandard, including stacked Content-Encoding
+values in reverse order. `content`, `text` and `json()` use the decoded body;
+`decoded` is true when a coding was removed. Response headers remain the
+original wire headers, so Content-Length may describe the compressed body.
+Use `decode_content=False` to retain the original body bytes. Unknown or corrupt
+content encodings raise `TransportError` when decoding is enabled. No Python
+codec dependency or request worker thread is needed.
+
+`response.cookies` is an immutable response-local container. Each Set-Cookie
+field is parsed separately. `get_dict()` and `get(name)` work for unambiguous
+names; when the same name has different domain/path scopes, they raise
+`CookieConflictError` instead of silently dropping a cookie. Select a scope
+with `get(name, domain="example.com", path="/")` or
+`get_dict(domain="example.com", path="/")`. `items()` includes every name/value
+pair, including repeated names, and iteration yields immutable `Cookie`
+records with `domain`, `path`, `secure`, `http_only`, `same_site`, `expires` and
+`max_age`. Attribute keys in `cookie.attributes` are lowercase; raw values,
+including the original Expires date, are retained. The `expires` timestamp honors
+Max-Age precedence. Invalid cookie fields are skipped without losing other
+fields, and a later directive replaces an earlier one with the same
+name/domain/path identity.
+
+Expiry and deletion directives remain inspectable in this container. It does
+not implement a browser's cookie acceptance/sending policy, and received cookies
+never change Session defaults. Applications control cookie updates explicitly.
 
 Defaults are 64 active requests, 256 pending requests, a 64 MiB maximum response
 body, and the engine's three retries for requests proven unprocessed by the
@@ -204,7 +249,8 @@ peer. `max_unprocessed_retries=0` selects that engine default; `-1` disables
 retries and `1..32` chooses an explicit limit. Configure `max_concurrent_requests`,
 `max_pending_requests`, `max_response_bytes`, `max_unprocessed_retries` when
 creating the Session. The Go engine additionally caps submitted bodies at 64 MiB
-and metadata at 4 MiB. Requests beyond native capacity raise `QueueFullError`.
+and metadata at 4 MiB. The response limit applies to encoded bytes, every
+intermediate decoding stage and the final body. Requests beyond native capacity raise `QueueFullError`.
 The dispatcher drains completed responses promptly, but application-held
 Responses still consume Python memory independently of native queue limits.
 
@@ -222,10 +268,9 @@ creation. Inspect `session.profile_hash` and `session.limitations`.
 tls.peet.ws capture using the native engine. `allow_opaque` defaults to false;
 opting in accepts the engine's documented advertisement-only limitations.
 
-The prototype buffers complete responses; streaming, automatic decompression,
-redirect following, mutable browser cookie jars, multipart uploads, HTTP/1.1
-fallback and full requests adapter/hook compatibility are not implemented.
-Raw content remains encoded if you explicitly request gzip/br/etc. The Go
+The prototype buffers complete responses; streaming, redirect following,
+mutable browser cookie jars, multipart uploads and full requests adapter/hook
+compatibility are not implemented. The Go
 profile's limitations still apply, including raw advertisement of extension
 51764 rather than its full certificate-selection/retry protocol behavior.
 

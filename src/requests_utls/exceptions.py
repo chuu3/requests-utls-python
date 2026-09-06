@@ -47,6 +47,10 @@ class HTTPError(RequestError):
         self.response = response
 
 
+class CookieConflictError(RequestError, LookupError):
+    """A cookie name matches multiple domain/path scopes; select a scope."""
+
+
 _ERROR_TYPES = {
     2: SessionClosedError,
     3: InvalidRequestError,

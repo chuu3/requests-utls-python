@@ -90,6 +90,9 @@ class _BaseSession:
         proxy_auth=None,
         verify=True,
         session_resumption=True,
+        random_ja3=False,
+        force_http1=False,
+        decode_content=True,
         headers=None,
         cookies=None,
         timeout=30,
@@ -102,14 +105,19 @@ class _BaseSession:
         self._headers = Headers(headers)
         self._cookies = MappingProxyType(_cookies(cookies))
         self._timeout = _timeout_ms(timeout)
-        if not isinstance(session_resumption, bool):
-            raise InvalidRequestError("session_resumption must be True or False")
+        for name, value in (("session_resumption", session_resumption), ("random_ja3", random_ja3),
+                            ("force_http1", force_http1), ("decode_content", decode_content)):
+            if not isinstance(value, bool):
+                raise InvalidRequestError(f"{name} must be True or False")
         if not isinstance(profile, Profile):
             profile = Profile.from_dict(profile) if isinstance(profile, Mapping) else Profile.from_file(profile)
         self._profile = profile
         config = {
             "profile": profile.to_dict(),
             "disable_session_resumption": not session_resumption,
+            "random_ja3": random_ja3,
+            "force_http1": force_http1,
+            "disable_content_decoding": not decode_content,
             "max_concurrent_requests": _limit("max_concurrent_requests", max_concurrent_requests, 1),
             "max_pending_requests": _limit("max_pending_requests", max_pending_requests, 0),
             "max_response_bytes": _limit("max_response_bytes", max_response_bytes, 1),
@@ -202,8 +210,12 @@ class _BaseSession:
             message = message.replace(secret, "<redacted>")
         return message
 
-    def _prepare(self, method, url, *, headers=None, headers_order=None, cookies=None, params=None, data=None, json=_UNSET, timeout=_UNSET):
+    def _prepare(self, method, url, *, headers=None, headers_order=None, cookies=None, params=None, data=None, json=_UNSET, timeout=_UNSET, allow_redirects=False):
         check_process(self._pid)
+        if not isinstance(allow_redirects, bool):
+            raise InvalidRequestError("allow_redirects must be True or False")
+        if allow_redirects:
+            raise InvalidRequestError("redirect following is not implemented; use allow_redirects=False")
         if not isinstance(method, str) or not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", method):
             raise InvalidRequestError("method must be an HTTP token")
         if not isinstance(url, str):
@@ -222,21 +234,23 @@ class _BaseSession:
         # modified while preparing a request.
         requested = Headers(headers)
         names = set(requested)
-        fields = [(name, value) for name, value in self._headers.multi_items() if name not in names]
-        fields.extend(requested.multi_items())
+        # Preserve spelling through the ABI: Go selects HTTP/1 or HTTP/2 and
+        # lowercases only HTTP/2 fields, including when ALPN falls back to H1.
+        fields = [(name, value) for name, value in self._headers.raw_items() if name.lower() not in names]
+        fields.extend(requested.raw_items())
         names.update(self._headers)
         request_cookies = dict(self._cookies)
         request_cookies.update(_cookies(cookies))
         if request_cookies:
             if "cookie" in names:
                 raise InvalidRequestError("use either a Cookie header or cookies defaults/argument")
-            fields.append(("cookie", "; ".join(f"{name}={value}" for name, value in request_cookies.items())))
+            fields.append(("Cookie", "; ".join(f"{name}={value}" for name, value in request_cookies.items())))
         if json is not _UNSET and data is not None:
             raise InvalidRequestError("data and json cannot be used together")
         if json is not _UNSET:
             body = jsonlib.dumps(json, separators=(",", ":"), allow_nan=False).encode("utf-8")
             if "content-type" not in names:
-                fields.append(("content-type", "application/json"))
+                fields.append(("Content-Type", "application/json"))
         elif data is None:
             body = b""
         elif isinstance(data, str):
@@ -246,7 +260,7 @@ class _BaseSession:
         elif isinstance(data, Mapping):
             body = urlencode(list(data.items()), doseq=True).encode("ascii")
             if "content-type" not in names:
-                fields.append(("content-type", "application/x-www-form-urlencoded"))
+                fields.append(("Content-Type", "application/x-www-form-urlencoded"))
         else:
             raise InvalidRequestError("data must be bytes, str, or a form mapping")
         if isinstance(headers_order, str):
@@ -318,6 +332,7 @@ class _BaseSession:
                                 content=body,
                                 url=pending.url,
                                 protocol=info.get("protocol", "HTTP/2.0"),
+                                decoded=info.get("decoded", False),
                             )
                         except Exception:
                             response = None

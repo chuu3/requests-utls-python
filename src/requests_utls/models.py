@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 
 from .exceptions import HTTPError, InvalidRequestError
+from .cookies import ResponseCookies
 
 _HEADER_NAME = re.compile(r"[!#$%&'*+.^_`|~0-9a-z-]+\Z", re.ASCII)
 
@@ -32,24 +33,30 @@ class Headers(Mapping[str, str]):
     """
 
     _items: tuple[tuple[str, str], ...] = field(repr=False)
+    _raw_items: tuple[tuple[str, str], ...] = field(repr=False, compare=False)
 
     def __init__(self, values=None):
         if values is None:
-            items = ()
+            items = raw_items = ()
         elif isinstance(values, Headers):
             items = values._items
+            raw_items = values._raw_items
         else:
             source = values.items() if isinstance(values, Mapping) else values
             items = []
+            raw_items = []
             for name, value in source:
-                name = header_name(name)
+                normalized_name = header_name(name)
                 if not isinstance(value, str):
                     raise InvalidRequestError("header values must be strings")
                 if any(ord(c) < 32 and c != "\t" or ord(c) == 127 for c in value):
                     raise InvalidRequestError("header values cannot contain control characters")
-                items.append((name, value))
+                items.append((normalized_name, value))
+                raw_items.append((name, value))
             items = tuple(items)
+            raw_items = tuple(raw_items)
         object.__setattr__(self, "_items", items)
+        object.__setattr__(self, "_raw_items", raw_items)
 
     def __getitem__(self, key: str) -> str:
         values = self.get_list(key)
@@ -68,6 +75,10 @@ class Headers(Mapping[str, str]):
 
     def multi_items(self) -> list[tuple[str, str]]:
         return list(self._items)
+
+    def raw_items(self) -> list[tuple[str, str]]:
+        """Return ordered fields with their original input name spelling."""
+        return list(self._raw_items)
 
     def __repr__(self):
         return f"Headers({len(self._items)} fields)"
@@ -141,6 +152,11 @@ class Response:
     content: bytes = field(repr=False)
     url: str = field(repr=False)
     protocol: str = "HTTP/2.0"
+    decoded: bool = False
+    cookies: ResponseCookies = field(init=False, repr=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "cookies", ResponseCookies.from_headers(self.headers, self.url))
 
     @property
     def encoding(self) -> str:

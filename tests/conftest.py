@@ -47,6 +47,10 @@ def peer(tmp_path_factory):
             ca_path = directory / "ca.pem"
             ca_path.write_text(descriptor["ca_pem"])
             descriptor["ca_file"] = str(ca_path)
+            if "http1_ca_pem" in descriptor:
+                http1_ca = directory / "http1-ca.pem"
+                http1_ca.write_text(descriptor["http1_ca_pem"])
+                descriptor["http1_ca_file"] = str(http1_ca)
             yield descriptor
         finally:
             process.terminate()

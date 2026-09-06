@@ -131,8 +131,9 @@ def build_and_test(engine_directory, output_directory, target):
         work = Path(temporary)
         native = work / "payload"
         peer = work / ("requests-utls-testpeer.exe" if os.name == "nt" else "requests-utls-testpeer")
+        package_version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
         pack = [sys.executable, engine / "scripts" / "pack_native.py", "--output", native,
-                "--wheel-platform", target, "--engine-version", "v0.1.0", "--peer-output", peer, "--require-clean"]
+                "--wheel-platform", target, "--engine-version", "v" + package_version, "--peer-output", peer, "--require-clean"]
         if target.startswith("linux_"):
             pack.extend(["--glibc-baseline", "2.28"])
         run(*pack, env=build_env)
