@@ -60,7 +60,17 @@ def make_wheel(tmp_path, *, platform="macosx_13_0_arm64", os="darwin", arch="arm
     with zipfile.ZipFile(path, "w") as wheel:
         for name, data in content.items():
             if data is not None:
-                wheel.writestr(name, data)
+                # ZipInfo normalizes Windows backslashes in its constructor.
+                # Preserve the requested raw name so malformed-path fixtures
+                # exercise the archive validator on every host platform.
+                entry = zipfile.ZipInfo(name)
+                entry.filename = name
+                entry.orig_filename = name
+                wheel.writestr(entry, data)
+    with zipfile.ZipFile(path) as wheel:
+        assert {entry.orig_filename for entry in wheel.infolist()} == {
+            name for name, data in content.items() if data is not None
+        }
     return path, content, manifest
 
 

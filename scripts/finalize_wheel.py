@@ -64,6 +64,9 @@ def finalize(path):
         if len(names) != len(set(names)):
             raise ValueError("duplicate wheel ZIP paths")
         for member in members:
+            # ZipInfo normalizes Windows backslashes in filename on read;
+            # validate the original archive path before that normalization too.
+            safe_path(member.orig_filename, directory=member.orig_filename.endswith("/"))
             safe_path(member.filename, directory=member.is_dir())
             if stat.S_ISLNK(member.external_attr >> 16):
                 raise ValueError("wheel ZIP paths must not be symlinks")
