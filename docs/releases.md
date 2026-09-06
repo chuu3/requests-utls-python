@@ -1,7 +1,8 @@
 # Packaging and releases
 
-The Python package is public on PyPI; the Python and Go GitHub repositories can
-remain private. End users install with `python -m pip install requests-utls` and
+The Python package can be distributed publicly on PyPI while the Python and Go
+GitHub repositories remain private. After publication, end users install with
+`python -m pip install requests-utls` and
 do not need credentials or a Go toolchain. The installed wheel contains the
 Python client, the platform's Go shared library, `profiles/chrome_152.json`, an
 `engine.json` manifest, and the engine and dependency licenses.

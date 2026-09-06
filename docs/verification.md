@@ -1,8 +1,37 @@
-# Python prototype verification — 2026-09-06
+# Verification — 2026-09-06
 
-Verified locally on macOS arm64, CPython 3.11.9 and the separately built Go 1.27.1
-engine, native ABI 1. Other platforms have CI definitions but have not been
-executed as part of this local verification.
+The original prototype checks below used macOS arm64, CPython 3.11.9 and the
+separately built Go 1.27.1 engine, native ABI 1. They predate bundled platform
+wheels. The release workflow now builds and tests installed wheels on all five
+supported targets; see [packaging and releases](releases.md).
+
+## Bundled platform wheels
+
+[Release build 34031300350](https://github.com/chuu3/requests-utls-python/actions/runs/34031300350)
+passed all five platform jobs using Python commit
+`0dc71d7`, Go commit `29e5d709117dac8086d68ae24d1f33c97930d789`, Go 1.27.1 and
+native ABI 1. Each job built and audited a wheel, installed it into a new
+virtual environment, and exercised the bundled engine with no external library
+override.
+
+| Wheel target | Installed package tests |
+| --- | --- |
+| manylinux_2_28_x86_64 | 109 passed |
+| manylinux_2_28_aarch64 | 109 passed |
+| macosx_13_0_arm64 | 109 passed |
+| macosx_13_0_x86_64 | 109 passed |
+| win_amd64 | 107 passed, 2 POSIX-only checks skipped |
+
+All five wheels passed strict Twine metadata checks and were uploaded as private
+Actions artifacts. They contain the engine, built-in Chrome 152 profile,
+licenses and matching provenance/checksums. Linux wheels advertise only the
+tested manylinux 2.28 policy. No sdist or universal wheel is included in the
+release set.
+
+The Python unit matrix passed on Python 3.11–3.14. The Go Linux/macOS/Windows
+matrix also passed, including 10 native packaging guard tests per system.
+The release workflow was dispatched with `publish=false`; this verification
+does not imply that the files have been uploaded to PyPI.
 
 ## Local tests and independent installation
 
@@ -30,8 +59,10 @@ shared library and a local TLS/HTTP2 peer. Integration coverage includes:
 The Go project additionally passed `go test -race ./...` and `go vet ./...`,
 including 64-stream Go ordering tests and native queue/handle lifecycle races.
 
-Both sdist and `requests_utls-0.1.0-py3-none-any.whl` built successfully. The wheel
-was inspected for absence of Go source or platform libraries. It was installed
+In that initial prototype check, both sdist and a development-only
+`requests_utls-0.1.0-py3-none-any.whl` built successfully. That universal wheel is
+not a release artifact. It was inspected for absence of Go source or platform
+libraries. It was installed
 in a fresh virtual environment, with the shared library, test peer and tests
 copied to a temporary directory. Imports resolved to that environment's
 `site-packages`; **all 55 tests passed again** there. The Python distribution
