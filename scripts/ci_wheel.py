@@ -69,8 +69,8 @@ def verify_wheel(wheel, expected_target):
         raise ValueError(f"unexpected release identity: {wheel.name}")
     if not tags or any(tag.interpreter != "py3" or tag.abi != "none" or tag.platform == "any" for tag in tags):
         raise ValueError(f"release wheel must use py3-none-platform tags: {wheel.name}")
-    if platform_tag not in {tag.platform for tag in tags}:
-        raise ValueError(f"wheel has not passed the required platform repair: {wheel.name}")
+    if {tag.platform for tag in tags} != {platform_tag}:
+        raise ValueError(f"wheel must advertise only the tested platform {platform_tag}: {wheel.name}")
     with zipfile.ZipFile(wheel) as archive:
         names = set(archive.namelist())
         expected_library = f"requests_utls/native/{library_name}"
@@ -95,7 +95,9 @@ def verify_wheel(wheel, expected_target):
 def repair(wheel, directory, target, env):
     if target.startswith("linux_"):
         run(sys.executable, "-m", "auditwheel", "show", wheel, env=env)
-        run(sys.executable, "-m", "auditwheel", "repair", "--plat", TARGETS[target][0], "-w", directory, wheel, env=env)
+        # Symbol inspection alone cannot establish an older Go runtime support
+        # floor. Emit only the glibc 2.28 platform built and tested in this job.
+        run(sys.executable, "-m", "auditwheel", "repair", "--plat", TARGETS[target][0], "--only-plat", "-w", directory, wheel, env=env)
     elif target.startswith("macosx_"):
         arch = "arm64" if target.endswith("arm64") else "x86_64"
         run("delocate-listdeps", wheel, env=env)

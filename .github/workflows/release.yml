@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONUTF8: "1"
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -90,6 +93,7 @@ jobs:
             -v "$go_root:/opt/requests-utls-go:ro" \
             -w /io \
             -e WHEEL_PLATFORM \
+            -e PYTHONUTF8 \
             -e GOROOT=/opt/requests-utls-go \
             -e GOTOOLCHAIN=local \
             -e GOPATH=/tmp/requests-utls-gopath \

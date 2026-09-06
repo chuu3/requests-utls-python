@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import stat
 import struct
@@ -120,6 +121,14 @@ def test_multiple_linux_platform_tags(tmp_path, compressed):
     assert manifest["wheel_platform"] == platforms
     assert manifest["wheel_tags"] == [f"py3-none-{tag}" for tag in platforms.split(".")]
     assert_record(content)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires POSIX permission bits")
+def test_finalized_wheel_is_readable_outside_the_build_container(tmp_path):
+    path, _, _ = make_wheel(tmp_path)
+    path.chmod(0o600)
+    finalizer.finalize(path)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o644
 
 
 @pytest.mark.parametrize("changes, message", [

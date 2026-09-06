@@ -148,6 +148,10 @@ def finalize(path):
         with zipfile.ZipFile(temporary_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
             for member in members:
                 archive.writestr(member, content[member.filename])
+        # Linux builds run as root inside manylinux. A NamedTemporaryFile starts
+        # at 0600, so make the completed distribution readable by the host's
+        # artifact uploader before replacing the original wheel.
+        temporary_path.chmod(0o644)
         temporary_path.replace(path)
     finally:
         temporary_path.unlink(missing_ok=True)
