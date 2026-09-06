@@ -1,0 +1,105 @@
+{
+  "recorded_at_utc": "2026-09-06T10:40:15.413793+00:00",
+  "endpoint": "https://tls.peet.ws/api/all",
+  "proxy_used": true,
+  "requests": 4,
+  "passed": 4,
+  "profile_hash": "7ba49c373e6db7ba52f5dc6c65b9f75445219b64a682241b1152c8a5ca13be45",
+  "demonstrated_psk_on_reconnect": true,
+  "server_acceptance": "The endpoint exposes the client offer, not server DidResume; actual acceptance is verified by local TLS server tests.",
+  "connection_comparison": "Compare client_random in memory only; raw randoms, tickets, IPs and credentials are omitted.",
+  "results": [
+    {
+      "session_resumption": true,
+      "request_index": 0,
+      "status": 200,
+      "same_connection_as_previous": null,
+      "pre_shared_key_offered": false,
+      "checks": {
+        "http_200_h2": true,
+        "expected_ja3_extension_sequence": true,
+        "ja3_hash": true,
+        "http2_fingerprint": true,
+        "psk_is_last_when_offered": true,
+        "first_request_is_cold": true,
+        "disabled_never_offers_psk": true
+      },
+      "fingerprint": {
+        "ja3": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,51764-35-51-0-65281-13-5-65037-11-43-17613-10-23-27-16-18-45,4588-29-23-24,0",
+        "ja3_hash": "36b4aa19269d847d0680175adbf9b96f",
+        "ja4": "t13d1517h2_8daaf6152771_cb7bf5808d99",
+        "peetprint_hash": "fc97c1cdfb1409c9a9326c1b726d1dee"
+      },
+      "elapsed_ms": 1303
+    },
+    {
+      "session_resumption": true,
+      "request_index": 1,
+      "status": 200,
+      "same_connection_as_previous": false,
+      "pre_shared_key_offered": true,
+      "checks": {
+        "http_200_h2": true,
+        "expected_ja3_extension_sequence": true,
+        "ja3_hash": true,
+        "http2_fingerprint": true,
+        "psk_is_last_when_offered": true,
+        "first_request_is_cold": true,
+        "disabled_never_offers_psk": true
+      },
+      "fingerprint": {
+        "ja3": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,51764-35-51-0-65281-13-5-65037-11-43-17613-10-23-27-16-18-45-41,4588-29-23-24,0",
+        "ja3_hash": "6dfb00d6b08a6befc5ce930c61f81c2a",
+        "ja4": "t13d1518h2_8daaf6152771_e2d80978ab2e",
+        "peetprint_hash": "5fa343c29062ede7d0e28fd46c1052a7"
+      },
+      "elapsed_ms": 1118
+    },
+    {
+      "session_resumption": false,
+      "request_index": 0,
+      "status": 200,
+      "same_connection_as_previous": null,
+      "pre_shared_key_offered": false,
+      "checks": {
+        "http_200_h2": true,
+        "expected_ja3_extension_sequence": true,
+        "ja3_hash": true,
+        "http2_fingerprint": true,
+        "psk_is_last_when_offered": true,
+        "first_request_is_cold": true,
+        "disabled_never_offers_psk": true
+      },
+      "fingerprint": {
+        "ja3": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,51764-35-51-0-65281-13-5-65037-11-43-17613-10-23-27-16-18-45,4588-29-23-24,0",
+        "ja3_hash": "36b4aa19269d847d0680175adbf9b96f",
+        "ja4": "t13d1517h2_8daaf6152771_cb7bf5808d99",
+        "peetprint_hash": "fc97c1cdfb1409c9a9326c1b726d1dee"
+      },
+      "elapsed_ms": 1110
+    },
+    {
+      "session_resumption": false,
+      "request_index": 1,
+      "status": 200,
+      "same_connection_as_previous": false,
+      "pre_shared_key_offered": false,
+      "checks": {
+        "http_200_h2": true,
+        "expected_ja3_extension_sequence": true,
+        "ja3_hash": true,
+        "http2_fingerprint": true,
+        "psk_is_last_when_offered": true,
+        "first_request_is_cold": true,
+        "disabled_never_offers_psk": true
+      },
+      "fingerprint": {
+        "ja3": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,51764-35-51-0-65281-13-5-65037-11-43-17613-10-23-27-16-18-45,4588-29-23-24,0",
+        "ja3_hash": "36b4aa19269d847d0680175adbf9b96f",
+        "ja4": "t13d1517h2_8daaf6152771_cb7bf5808d99",
+        "peetprint_hash": "fc97c1cdfb1409c9a9326c1b726d1dee"
+      },
+      "elapsed_ms": 1132
+    }
+  ]
+}

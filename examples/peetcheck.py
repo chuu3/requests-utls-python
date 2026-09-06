@@ -100,7 +100,9 @@ def main():
     username, password = os.environ.get("REQUESTS_UTLS_PROXY_USERNAME"), os.environ.get("REQUESTS_UTLS_PROXY_PASSWORD")
     if (username is None) != (password is None):
         parser.error("set both REQUESTS_UTLS_PROXY_USERNAME and REQUESTS_UTLS_PROXY_PASSWORD")
-    options = dict(profile=profile, proxy=proxy, timeout=60, max_unprocessed_retries=8,
+    # Compare the same cold-handshake fingerprint on every connection. Real
+    # ticket resumption adds extension 41 and has a different fingerprint.
+    options = dict(profile=profile, proxy=proxy, timeout=60, max_unprocessed_retries=8, session_resumption=False,
                    max_concurrent_requests=args.concurrency)
     if username is not None:
         options["proxy_auth"] = (username, password)
@@ -151,6 +153,7 @@ def main():
         "profile_hash": profile_hash, "limitations": limitations,
         "requests": len(results), "concurrency_per_api": args.concurrency,
         "timeout_ms": 60000, "max_unprocessed_retries": 8,
+        "session_resumption": False,
         "duplicate_cookie_fields": args.duplicate_cookies,
         "passed": passed, "results": results,
     }

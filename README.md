@@ -1,6 +1,6 @@
 # requests-utls — Python client
 
-Python 3.11+ client for the separately maintained **requests-utls Go engine**.
+Python 3.11+ client for the separately maintained [requests-utls Go engine](https://github.com/chuu3/requests-utls).
 The Python project contains no Go source and never builds or imports a sibling
 checkout. It uses CFFI ABI 1 to load an independently built shared library.
 
@@ -8,7 +8,7 @@ This is a **0.1.0 prototype**: HTTPS with HTTP/2, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
 async requests, proxy authentication, and explicit resource lifecycle.
 
-See [verification results](docs/verification.md): 33 passing tests, independent
+See [verification results](docs/verification.md): 55 passing tests, independent
 wheel installation, and live sync/async fingerprint checks through a test proxy proxy.
 
 ## Install and connect the engine
@@ -85,6 +85,35 @@ response = session.get(
 This preserves both fields and their interleaving on the HTTP/2 wire. A Python
 dict cannot represent repeated header names; the `cookies=` mapping encodes
 cookie pairs into one field.
+
+## Connection reuse and TLS session resumption
+
+`Session` and `AsyncSession` reuse an available HTTP/2 connection to the same
+origin by default, including multiplexing concurrent requests. Two requests on
+that connection share its existing TLS handshake: the second request does not
+send another ClientHello or add a TLS extension.
+
+TLS session resumption is also enabled by default. When a new connection is
+needed, the Session can reuse a TLS 1.3 ticket received on an earlier connection
+to that origin. A resumed handshake offers the `pre_shared_key` extension
+(41), which changes the ClientHello fingerprint. This requires a usable ticket,
+a compatible profile, and server acceptance; a second request alone does not
+guarantee resumption. The `key_share` extension (51) is separate and is already
+used by ordinary TLS 1.3 handshakes.
+
+The bounded ticket cache belongs to one Session and is never shared with another
+Session. It is safe for concurrent requests; closing the Session discards its
+connections and cache. To keep new connections on full handshakes while still
+reusing existing connections, set:
+
+```python
+with Session(profile="chrome_152.json", session_resumption=False) as session:
+    first = session.get(url)
+    second = session.get(url)
+```
+
+The same option applies to `AsyncSession`. Resumption does not enable TLS 0-RTT
+early data.
 
 ## Async requests
 
@@ -194,7 +223,7 @@ cannot be unloaded while Go threads exist.
 ## Development
 
 ```sh
-python -m pytest tests/test_models.py
+python -m pytest tests/test_models.py tests/test_session_options.py
 ```
 
 Native integration tests additionally require explicit

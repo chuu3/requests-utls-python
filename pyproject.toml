@@ -13,6 +13,10 @@ license-files = ["LICENSE"]
 authors = [{name = "requests-utls contributors"}]
 dependencies = ["cffi>=1.16"]
 
+[project.urls]
+Repository = "https://github.com/chuu3/requests-utls-python"
+"Go engine" = "https://github.com/chuu3/requests-utls"
+
 [project.optional-dependencies]
 test = ["pytest>=8"]
 

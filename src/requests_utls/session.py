@@ -89,6 +89,7 @@ class _BaseSession:
         proxy=None,
         proxy_auth=None,
         verify=True,
+        session_resumption=True,
         headers=None,
         cookies=None,
         timeout=30,
@@ -101,11 +102,14 @@ class _BaseSession:
         self._headers = Headers(headers)
         self._cookies = MappingProxyType(_cookies(cookies))
         self._timeout = _timeout_ms(timeout)
+        if not isinstance(session_resumption, bool):
+            raise InvalidRequestError("session_resumption must be True or False")
         if not isinstance(profile, Profile):
             profile = Profile.from_dict(profile) if isinstance(profile, Mapping) else Profile.from_file(profile)
         self._profile = profile
         config = {
             "profile": profile.to_dict(),
+            "disable_session_resumption": not session_resumption,
             "max_concurrent_requests": _limit("max_concurrent_requests", max_concurrent_requests, 1),
             "max_pending_requests": _limit("max_pending_requests", max_pending_requests, 0),
             "max_response_bytes": _limit("max_response_bytes", max_response_bytes, 1),
