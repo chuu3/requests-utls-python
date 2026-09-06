@@ -215,3 +215,98 @@ def test_cli_reports_legacy_padding_without_turning_failure_into_success(tmp_pat
     assert record["checks"]["ja4"] is False and record["checks"]["ja4_r"] is False
     assert record["baseline_ja4_calculated_current"] == new["tls"]["ja4"]
     assert json.loads(output.with_suffix(".jsonl").read_text()) == record
+
+
+audit_spec = importlib.util.spec_from_file_location("audit_peet_padding_baselines", Path(__file__).parents[1] / "examples/audit_peet_padding_baselines.py")
+padding_audit = importlib.util.module_from_spec(audit_spec)
+audit_spec.loader.exec_module(padding_audit)
+
+
+def _audit_inputs(pair):
+    old, new = copy.deepcopy(pair)
+    old["tls"]["tls_version_negotiated"] = "772"
+    checks, differences = acceptance.comparisons(old, new)
+    record = {"file": "captures/source.json", "outcome": "fingerprint_mismatch",
+              "checks": checks, "differences": differences,
+              "fingerprint": {key: new["tls"][key] for key in acceptance.FINGERPRINTS}}
+    return old, record
+
+
+def test_independent_audit_recomputes_known_hashes_without_modifying_record(legacy_padding_pair):
+    old, record = _audit_inputs(legacy_padding_pair)
+    snapshot = copy.deepcopy((old, record))
+    result = padding_audit.audit_record(old, record)
+    assert result["audit_result"] == "verified_legacy_padding_difference"
+    assert result["calculated_legacy_extension_hash"] == "f37e75b10bcc"
+    assert result["calculated_current_extension_hash"] == "e5627efa2ab1"
+    assert result["source_prefix"] == result["observed_prefix"] == "t13d1516h2"
+    assert result["prefix_issues"] == []
+    assert (old, record) == snapshot
+
+
+def test_independent_audit_explains_peet_prefix_deviations_without_normalizing_them(legacy_padding_pair):
+    old, new = copy.deepcopy(legacy_padding_pair)
+    extensions = [10, 11, 13, 15, 35, 51, 21]
+    for capture, exclude in ((old, {0, 16, 21}), (new, {0, 16})):
+        tls = capture["tls"]
+        ja3 = tls["ja3"].split(",")
+        ja3[2] = "-".join(map(str, extensions))
+        tls["ja3"] = ",".join(ja3)
+        tls["ja3_hash"] = hashlib.md5(tls["ja3"].encode(), usedforsecurity=False).hexdigest()
+        peet = tls["peetprint"].split("|")
+        peet[1] = ""
+        peet[7] = "-".join(sorted(map(str, extensions)))
+        tls["peetprint"] = "|".join(peet)
+        tls["peetprint_hash"] = hashlib.md5(tls["peetprint"].encode(), usedforsecurity=False).hexdigest()
+        raw = tls["ja4_r"].split("_")
+        raw[0] = "t13d157"  # Peet: fixed d, one-digit extension count, no ALPN.
+        raw[2] = ",".join(sorted(f"{value:04x}" for value in extensions if value not in exclude))
+        _set_raw_and_hash(tls, "_".join(raw))
+    old, record = _audit_inputs((old, new))
+    result = padding_audit.audit_record(old, record)
+    assert result["prefix_issues"] == ["missing_alpn_00", "sni_flag_d_without_sni", "extension_count_not_two_digits"]
+    assert result["source_prefix"] == result["observed_prefix"] == "t13d157"
+    assert result["calculated_current_ja4"].startswith("t13d157_")
+    assert record["outcome"] == "fingerprint_mismatch"
+
+
+@pytest.mark.parametrize("change", ["prefix_changed", "other_check_failed", "source_hash_changed"])
+def test_independent_audit_rejects_unrelated_or_inconsistent_evidence(legacy_padding_pair, change):
+    old, record = _audit_inputs(legacy_padding_pair)
+    if change == "prefix_changed":
+        record["fingerprint"]["ja4_r"] = record["fingerprint"]["ja4_r"].replace("t13", "t12", 1)
+        record["differences"]["ja4_r"]["actual"] = record["fingerprint"]["ja4_r"]
+    elif change == "other_check_failed":
+        record["checks"]["extension_vectors"] = False
+    else:
+        old["tls"]["ja3_hash"] = record["fingerprint"]["ja3_hash"] = "0" * 32
+    with pytest.raises(ValueError):
+        padding_audit.audit_record(old, record)
+
+
+def test_independent_audit_cli_binds_report_and_source_digests(tmp_path, monkeypatch, legacy_padding_pair):
+    old, record = _audit_inputs(legacy_padding_pair)
+    directory = tmp_path / "captures"
+    directory.mkdir()
+    raw = json.dumps(old).encode()
+    source = directory / "source.json"
+    source.write_bytes(raw)
+    record["file"] = tmp_path.name + "/captures/source.json"
+    record["sha256"] = hashlib.sha256(raw).hexdigest()
+    report = tmp_path / "strict.json"
+    report_bytes = json.dumps({"profile_count": 1, "outcomes": {"fingerprint_mismatch": 1},
+                              "results": [record], "native_library_sha256": "native-sha",
+                              "comparator_sha256": "comparator-sha"}).encode()
+    report.write_bytes(report_bytes)
+    output = tmp_path / "audit.json"
+    monkeypatch.setattr(sys, "argv", ["audit_peet_padding_baselines.py", str(directory),
+                                    "--report", str(report), "--output", str(output)])
+    assert padding_audit.main() == 0
+    result = json.loads(output.read_text())
+    assert result["strict_report_sha256"] == hashlib.sha256(report_bytes).hexdigest()
+    assert result["audit_results"] == {"verified_legacy_padding_difference": 1}
+    assert result["results"][0]["source_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert report.read_bytes() == report_bytes and source.read_bytes() == raw
+    source.write_bytes(raw + b" ")
+    assert padding_audit.main() == 1
+    assert json.loads(output.read_text())["results"][0]["reason"] == "source_digest_changed"

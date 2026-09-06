@@ -6,6 +6,59 @@ fingerprints and stable ClientHello fields with the original capture. A
 successful import alone does not establish that a handshake works or that its
 fingerprint matches.
 
+## Version 0.2.0 live acceptance
+
+The [unchanged strict report](profile-acceptance-0.2.0.json) covers 1,010 source
+files with one fixed native artifact and comparison script:
+
+| Strict outcome | Files |
+| --- | ---: |
+| `passed` | 575 |
+| `fingerprint_mismatch` | 35 |
+| `excluded_resumption` | 399 |
+| `invalid_capture` | 1 |
+
+All 610 valid, non-resumption captures completed an HTTP 200 request: 566 over
+HTTP/2 and 44 over HTTP/1.1. The invalid capture has no usable TLS cipher list.
+The 35 mismatches all retain equal JA3, PeetPrint and every other strict
+static-field/vector check; their only differing fields are JA4 and JA4 raw.
+
+The [independent padding audit](profile-acceptance-padding-audit-0.2.0.json)
+recomputes both the historical and current JA4 calculations for all 35, keeping
+each source/observed prefix unchanged. All raw vectors and hashes match those
+two calculations exactly. The differing result is explained by Peet's historical
+removal of padding from the JA4 extension hash, documented below.
+
+The frozen comparator automatically annotated 23 of these failures. The other
+12 have additional Peet prefix-format deviations, present identically in the
+source and observed fingerprints, so the deliberately strict diagnostic did
+not annotate them. Nine lack the required `00` for absent ALPN; the other three
+were rejected because their prefix claims SNI despite its absence. Across those
+12, five have that SNI issue and four have an extension count without the
+required leading zero; these categories overlap.
+
+The independent audit explains the failures; **the strict result remains 575
+passed and 35 mismatched**. It neither rewrites the original report nor claims
+that an inconsistent historical JA4 value was reproduced by the current server.
+The audit binds the exact strict-report SHA-256 and each source-file SHA-256,
+and distinguishes its recomputed fingerprint evidence from the static-field
+checks inherited from that strict report.
+
+Reproduce it with the same source directories:
+
+```sh
+python examples/audit_peet_padding_baselines.py \
+  /absolute/path/to/browser-profiles \
+  /absolute/path/to/other-captures \
+  --report docs/profile-acceptance-0.2.0.json \
+  --output /absolute/path/to/reproduced-padding-audit.json
+```
+
+This audit is offline. It fails on changed source digests, additional strict
+check failures, changed prefixes, or raw/hash differences beyond the exact
+padding algorithm change. Its successful exit code means the historical
+explanation was verified; it does not replace the strict acceptance exit code.
+
 ## Run a complete acceptance
 
 Install the Python client and use either its bundled engine or an explicitly

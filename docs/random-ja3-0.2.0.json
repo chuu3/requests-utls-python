@@ -1,0 +1,44 @@
+{
+  "requests": 6,
+  "fresh_handshakes": 6,
+  "distinct_ja3_hashes": 6,
+  "results": [
+    {
+      "ja3_hash": "9a53bcbac33f4d7e0189d0334f7bdad1",
+      "stable_ja4": true,
+      "stable_peetprint": true,
+      "duplicate_cookie_order": true
+    },
+    {
+      "ja3_hash": "6f33b2bc7d4d42cbd03de7e84ba586cc",
+      "stable_ja4": true,
+      "stable_peetprint": true,
+      "duplicate_cookie_order": true
+    },
+    {
+      "ja3_hash": "507c4c9b50dae6e0e9aba17a37d40d07",
+      "stable_ja4": true,
+      "stable_peetprint": true,
+      "duplicate_cookie_order": true
+    },
+    {
+      "ja3_hash": "24e9125ade1e06ebfb0f03c88a469985",
+      "stable_ja4": true,
+      "stable_peetprint": true,
+      "duplicate_cookie_order": true
+    },
+    {
+      "ja3_hash": "32a43c3ad3e6c3197453c0c917566cbe",
+      "stable_ja4": true,
+      "stable_peetprint": true,
+      "duplicate_cookie_order": true
+    },
+    {
+      "ja3_hash": "155c0e1268b4b5e8dccaceb9e29ebdce",
+      "stable_ja4": true,
+      "stable_peetprint": true,
+      "duplicate_cookie_order": true
+    }
+  ],
+  "engine_commit": "177a88653b1731fb6e21227c4850de78a5337b65"
+}
