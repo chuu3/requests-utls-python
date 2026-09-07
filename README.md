@@ -93,11 +93,40 @@ Request header spelling is preserved for HTTP/1.1; HTTP/2 lowercases names on
 the wire. Lookup and `headers_order` matching are case-insensitive.
 `Headers.multi_items()` returns lowercase names, while `Headers.raw_items()`
 retains input spelling. An omitted or empty order preserves
-the relative order of supplied fields. Listing a name once groups all its values together;
+the relative order of supplied fields, subject to the protocol rules below.
+Listing a name once groups all its values together;
 listing it multiple times places one occurrence at each position, and the number
 of entries must equal its final occurrences. Missing names are ignored.
 Unlisted fields follow in their original relative order. Pseudo-header order is
 part of the immutable profile, not `headers_order`.
+
+The Go engine applies protocol-specific rules after selecting the actual
+HTTP protocol, including ALPN fallback; the Python Session does not remove
+fields from shared defaults or from the caller's input.
+
+- HTTP/1.1 always has a `Host` field, generated from the request URL when absent.
+  It is sent first unless `headers_order` explicitly positions `host`. A supplied
+  Host value and its field name spelling are retained. Other allowed fields,
+  including `Connection`, `Keep-Alive` and connection-nominated fields, retain
+  their supplied spelling and participate in ordering.
+- HTTP/2 consumes a supplied `Host` as `:authority` instead of sending a regular
+  `host` field. Without one, authority comes from the request URL. Its position
+  follows the profile's pseudo-header order, not a `host` entry in `headers_order`.
+  The engine removes `Connection`, `Keep-Alive`, `Proxy-Connection`,
+  `Transfer-Encoding`, `Upgrade`, `HTTP2-Settings`, and regular fields named by
+  `Connection`. A `TE` occurrence is retained only when its value is exactly
+  `trailers`, ignoring case, and is sent as `te: trailers`; other TE occurrences
+  are removed. Connection-nominated TE is removed as well. Other legal duplicate
+  fields retain their request-level order.
+
+For HTTP/2, occurrence counts apply to the fields that survive filtering;
+order entries for absent fields are ignored. A Host nominated by Connection
+still supplies `:authority`. A nominated Content-Length is omitted even for a
+nonempty body; HTTP/2 DATA frames carry that body without requiring the field.
+Invalid header names or values and caller-supplied `Proxy-Authorization` remain
+errors. HTTP/1.1 still rejects unsupported request framing and protocol upgrades;
+normalization does not enable chunked uploads or upgrade handling. A standalone
+`Trailer` request field remains unsupported.
 
 HTTP/1.1 has a Cookie exception: after ordering the original occurrences, the
 engine joins their nonempty values with `; ` into one field, retaining the first
@@ -126,7 +155,7 @@ response = session.post(
 Here the HTTP/2 fields are sent as `cookie`, `content-length: 7`, `x-marker`,
 then the second `cookie`. HTTP/1.1 connection reuse is implicit; the engine does
 not add `Connection: keep-alive` by default. An explicitly supplied `Connection`
-field participates in ordering for HTTP/1.1 and is rejected for HTTP/2.
+field participates in ordering for HTTP/1.1 and is removed for HTTP/2.
 
 Session headers are defaults: request fields replace all default fields with the
 same name, while preserving the request's duplicate entries. Remaining defaults

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Normalize request headers in Go after actual protocol selection: HTTP/2 maps
+  Host to `:authority`, removes connection-specific and Connection-nominated
+  fields, and retains only `TE: trailers`. Other legal duplicates keep their
+  ordering. HTTP/1.1 preserves allowed fields and sends Host first unless the
+  request's order explicitly places it. Generic validation and unsupported
+  HTTP/1.1 framing/upgrade checks remain enforced.
 - Bundle Chrome 150 and 152 from a single maintained engine profile index;
   validate every declared profile and its hash while retaining legacy ABI 1
   artifact compatibility. Both profiles can be loaded offline with Profile.builtin.
