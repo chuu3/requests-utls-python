@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.2.2 — 2026-09-07
+
 - Normalize request headers in Go after actual protocol selection: HTTP/2 maps
   Host to `:authority`, removes connection-specific and Connection-nominated
   fields, and retains only `TE: trailers`. Other legal duplicates keep their
@@ -26,6 +30,10 @@
   and record the published 0.2.1 wheel checks separately.
 - Bound automatic response decoding to four non-identity layers in the updated
   engine, while retaining limits on encoded, intermediate and final body bytes.
+
+This release bundles Go engine `bfa312493c7fc8f5843444757aa627b91fe2c561`
+and retains ABI version 1. Protocol normalization is implemented in Go; the
+Python request API remains unchanged.
 
 ## 0.2.1
 

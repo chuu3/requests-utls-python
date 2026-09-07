@@ -4,7 +4,7 @@ The Python package can be distributed publicly on PyPI while the Python and Go
 GitHub repositories remain private. After publication, end users install with
 `python -m pip install requests-utls` and
 do not need credentials or a Go toolchain. The installed wheel contains the
-Python client, the platform's Go shared library, `profiles/chrome_152.json`, an
+Python client, the platform's Go shared library, Chrome 150 and 152 profiles, an
 `engine.json` manifest, and the engine and dependency licenses.
 
 ## Independent engine versions
@@ -51,7 +51,7 @@ Each wheel is installed into a fresh virtual environment with no
 `REQUESTS_UTLS_LIBRARY` override. The full test suite exercises the bundled
 engine, HTTPS/HTTP2, repeated headers, concurrency, authenticated proxies,
 connection reuse and session resumption against an independent local Go test
-peer. The built-in profile is also tested. The test peer is not included in the
+peer. Both built-in profiles are also tested. The test peer is not included in the
 wheel. All five jobs must pass before publishing can begin.
 
 For a local build, put the pinned Go toolchain and the platform's C compiler on

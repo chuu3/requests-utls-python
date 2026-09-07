@@ -3,14 +3,15 @@
 Results below identify the release or prototype actually checked. They are
 historical evidence for those source revisions, not a claim that later changes
 have already passed the same checks. See [packaging and releases](releases.md)
-for the current build procedure.
+for the current build procedure and [release notes](https://github.com/chuu3/requests-utls-python/releases)
+for each published version's source identities and installed-wheel results.
 
 ## Development checks: Chrome 150 and HTTP/1.1 fallback
 
 The maintenance changes were checked with Python source
 `1ec9031063a8e8aa85464b6d7c45c61bd68c423e` and its locked Go engine
-`0de755f312aef3019857efa15c47bc72cf3d2602`. These are development checks;
-the latest published package remains 0.2.1.
+`0de755f312aef3019857efa15c47bc72cf3d2602`. These were development checks;
+the latest published package at that time was 0.2.1.
 
 [Python CI 34101668331](https://github.com/chuu3/requests-utls-python/actions/runs/34101668331)
 passed on Python 3.11, 3.12, 3.13 and 3.14, each with 231 unit tests passed and

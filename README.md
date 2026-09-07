@@ -6,8 +6,8 @@ the engine's dependency licenses. Installation does not require Go, a compiler,
 GitHub access, or a separately downloaded engine. Python and Go remain separate
 projects, connected through CFFI ABI 1.
 
-This is a **0.x prototype**; the latest published release is 0.2.1. Development
-changes are listed under [Unreleased](CHANGELOG.md). The client supports
+This is a **0.2.2 prototype**. Release notes and development changes are listed
+in the [changelog](CHANGELOG.md). The client supports
 HTTP/2 and HTTP/1.1, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
 async requests, proxy authentication, and explicit resource lifecycle.
@@ -47,8 +47,8 @@ The bundled captures retain the engine's documented profile limitations below.
 
 | Builtin name | Availability |
 | --- | --- |
-| `chrome_152` | Included in published 0.2.1 wheels and this branch |
-| `chrome_150` | Added on this development branch for the next release |
+| `chrome_152` | Included since 0.2.1 |
+| `chrome_150` | Included since 0.2.2 |
 
 Use `Profile.builtin("chrome_150")` or `Profile.builtin("chrome_152")` with an
 artifact containing the selected profile. Their source files are maintained in
