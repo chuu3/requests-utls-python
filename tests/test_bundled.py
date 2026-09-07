@@ -1,5 +1,6 @@
 """Acceptance checks that specifically require an installed platform wheel."""
 
+import hashlib
 import json
 import os
 from importlib.resources import files
@@ -26,9 +27,15 @@ def test_installed_engine_and_builtin_profile_work_without_library_configuration
     metadata = json.loads(files("requests_utls").joinpath("engine.json").read_bytes())
     assert metadata["abi_version"] == 1
     assert len(metadata["engine_commit"]) == 40
-    profile = Profile.builtin("chrome_152")
-    with Session(profile=profile, verify=peer["ca_file"], timeout=10) as session:
-        response = session.get(peer["url"] + "/echo", headers=[("x-installed-wheel", "yes")])
-        assert response.status_code == 200
-        assert response.json()["headers"] == [["x-installed-wheel", "yes"]]
-        assert session.limitations  # The captured profile keeps its advertised-only notes.
+    names = metadata["builtin_profiles"]
+    assert {"chrome_150", "chrome_152"} <= set(names)
+    for name in names:
+        resource = files("requests_utls").joinpath("profiles", name + ".json")
+        assert metadata["files_sha256"]["profiles/" + name + ".json"] == hashlib.sha256(resource.read_bytes()).hexdigest()
+        profile = Profile.builtin(name)
+        assert profile.to_dict() == json.loads(resource.read_bytes())
+        with Session(profile=profile, verify=peer["ca_file"], timeout=10) as session:
+            response = session.get(peer["url"] + "/echo", headers=[("x-installed-wheel", "yes")])
+            assert response.status_code == 200
+            assert response.json()["headers"] == [["x-installed-wheel", "yes"]]
+            assert session.limitations  # Both captures retain advertised-only notes.

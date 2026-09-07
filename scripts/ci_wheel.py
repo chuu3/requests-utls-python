@@ -76,11 +76,19 @@ def verify_wheel(wheel, expected_target):
         expected_library = f"requests_utls/native/{library_name}"
         if expected_library not in names or "requests_utls/engine.json" not in names:
             raise ValueError("release wheel does not include its native engine")
-        if "requests_utls/profiles/chrome_152.json" not in names:
-            raise ValueError("release wheel does not include the built-in profile")
         if not any(name.startswith("requests_utls/licenses/") for name in names):
             raise ValueError("release wheel does not include engine licenses")
         manifest = json.loads(archive.read("requests_utls/engine.json"))
+        # Share the artifact validator's declared-profile contract, including
+        # the legacy ABI 1 single-profile fallback, instead of a second list.
+        sys.path.insert(0, str(ROOT))
+        from _build_support import validate_builtin_profiles
+
+        validate_builtin_profiles(
+            manifest,
+            {name.removeprefix("requests_utls/") for name in names if name.startswith("requests_utls/")},
+            lambda relative: archive.read("requests_utls/" + relative),
+        )
         if manifest.get("engine_commit") != lock["commit"]:
             raise ValueError("release wheel engine commit does not match engine.lock.json")
         if manifest.get("go_version") != f"go{lock['go_version']}":

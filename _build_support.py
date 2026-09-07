@@ -109,6 +109,35 @@ def _binary_target(path):
     raise ArtifactError("native artifact is not a supported ELF, Mach-O, or PE shared library")
 
 
+def validate_builtin_profiles(manifest, files, read_bytes):
+    """Validate every declared builtin using either artifact or wheel readers.
+
+    ABI 1 artifacts predating the explicit list bundled Chrome 152 only. Keep
+    those usable; new artifacts carry the list from the Go source index.
+    """
+    names = manifest.get("builtin_profiles", ["chrome_152"])
+    _require(isinstance(names, list) and names, "builtin_profiles must be a nonempty list")
+    _require(all(isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_-]+", name) for name in names), "builtin_profiles contains an invalid profile name")
+    _require(len(names) == len(set(names)), "builtin_profiles must contain unique names")
+    expected = {f"profiles/{name}.json" for name in names}
+    actual = {name for name in files if name.startswith("profiles/") and not name.endswith("/")}
+    _require(expected <= actual, "engine artifact is missing a declared builtin profile")
+    _require(actual == expected, "engine artifact contains an undeclared profile file")
+    hashes = manifest.get("files_sha256")
+    if "builtin_profiles" in manifest or hashes is not None:
+        _require(isinstance(hashes, dict), "files_sha256 must be an object")
+    for relative in sorted(expected):
+        data = read_bytes(relative)
+        try:
+            profile = json.loads(data.decode("utf-8"))
+        except (UnicodeError, ValueError) as exc:
+            raise ArtifactError(f"bundled profile must contain valid UTF-8 JSON: {relative}") from exc
+        _require(isinstance(profile, dict), f"bundled profile must be an object: {relative}")
+        if hashes is not None:
+            _require(hashes.get(relative) == hashlib.sha256(data).hexdigest(), f"bundled profile SHA-256 mismatch: {relative}")
+    return tuple(names)
+
+
 def validate_artifact(root, platform):
     root = Path(root).expanduser().resolve()
     _require(root.is_dir(), "REQUESTS_UTLS_NATIVE_DIR must name an existing artifact directory")
@@ -147,7 +176,6 @@ def validate_artifact(root, platform):
         )
         files.append(relative)
     _require(library in files, "engine shared library is missing")
-    _require("profiles/chrome_152.json" in files, "engine artifact must include profiles/chrome_152.json")
     _require(any(name.startswith("licenses/") for name in files), "engine artifact must include its licenses")
     actual_hash = hashlib.sha256((root / library).read_bytes()).hexdigest()
     _require(actual_hash == expected_hash, "engine shared library SHA-256 mismatch")
@@ -155,12 +183,8 @@ def validate_artifact(root, platform):
     _require((binary_os, binary_arch) == (target_os, target_arch), "native binary OS/architecture disagrees with the manifest and wheel tag")
     if target_os == "darwin":
         _require(binary_minimum <= target_minimum, "wheel advertises macOS support below the native library's minimum macOS version")
-    try:
-        profile = json.loads((root / "profiles/chrome_152.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise ArtifactError("bundled Chrome profile must contain valid UTF-8 JSON") from exc
-    _require(isinstance(profile, dict), "bundled Chrome profile must be an object")
-    if "files_sha256" in manifest:
+    validate_builtin_profiles(manifest, files, lambda relative: (root / relative).read_bytes())
+    if "files_sha256" in manifest or "builtin_profiles" in manifest:
         hashes = manifest["files_sha256"]
         _require(isinstance(hashes, dict), "files_sha256 must be an object")
         _require(set(hashes) == set(files) - {"engine.json"}, "files_sha256 must cover every artifact payload file exactly once")

@@ -43,9 +43,21 @@ class Headers(Mapping[str, str]):
             raw_items = values._raw_items
         else:
             source = values.items() if isinstance(values, Mapping) else values
+            if isinstance(source, (str, bytes, bytearray)):
+                raise InvalidRequestError("headers must be a mapping or an iterable of name/value pairs")
+            try:
+                source = iter(source)
+            except TypeError:
+                raise InvalidRequestError("headers must be a mapping or an iterable of name/value pairs") from None
             items = []
             raw_items = []
-            for name, value in source:
+            for item in source:
+                if isinstance(item, (str, bytes, bytearray, Mapping)):
+                    raise InvalidRequestError("each header must be a name/value pair")
+                try:
+                    name, value = item
+                except (TypeError, ValueError):
+                    raise InvalidRequestError("each header must be a name/value pair") from None
                 normalized_name = header_name(name)
                 if not isinstance(value, str):
                     raise InvalidRequestError("header values must be strings")

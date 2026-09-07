@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass
 import json as jsonlib
@@ -20,16 +20,23 @@ from .exceptions import InvalidRequestError, NativeLibraryError, SessionClosedEr
 from .models import Headers, Profile, Response, header_name
 
 _UNSET = object()
+_MAX_TIMEOUT_MS = 9_223_372_036_854
 _COOKIE_VALUE = re.compile(r"[\x21\x23-\x2b\x2d-\x3a\x3c-\x5b\x5d-\x7e]*\Z", re.ASCII)
 
 
 def _timeout_ms(timeout):
     if timeout is None:
         return 0
-    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
+    if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
+            or timeout <= 0 or isinstance(timeout, float) and not math.isfinite(timeout)):
         raise InvalidRequestError("timeout must be a positive number of seconds or None")
+    # Compare before multiplying or converting arbitrary-size integers to float.
+    # Otherwise finite floats can overflow to inf, and math.isfinite(int) can
+    # itself raise OverflowError for an integer outside the float range.
+    if timeout > _MAX_TIMEOUT_MS / 1000:
+        raise InvalidRequestError("timeout is too large")
     value = math.ceil(timeout * 1000)
-    if value > 9_223_372_036_854:
+    if value > _MAX_TIMEOUT_MS:
         raise InvalidRequestError("timeout is too large")
     return value
 
@@ -135,9 +142,12 @@ class _BaseSession:
                 raise InvalidRequestError("proxy must be a valid URL") from None
             secrets.extend(unquote(value) for value in (parsed.username, parsed.password) if value)
         if proxy_auth is not None:
-            if isinstance(proxy_auth, str) or len(proxy_auth) != 2 or not all(isinstance(part, str) for part in proxy_auth):
+            if not isinstance(proxy_auth, Sequence) or isinstance(proxy_auth, (str, bytes, bytearray)):
                 raise InvalidRequestError("proxy_auth must be a (username, password) string pair")
-            username, password = tuple(proxy_auth)
+            auth = tuple(proxy_auth)
+            if len(auth) != 2 or not all(isinstance(part, str) for part in auth):
+                raise InvalidRequestError("proxy_auth must be a (username, password) string pair")
+            username, password = auth
             config["proxy_auth"] = {"username": username, "password": password}
             secrets.extend(part for part in (username, password) if part)
         self._secrets = tuple(sorted(set(secrets), key=len, reverse=True))
@@ -228,7 +238,12 @@ class _BaseSession:
         if parsed.username is not None or parsed.password is not None:
             raise InvalidRequestError("origin URL credentials are unsupported; use an explicit Authorization header")
         if params is not None:
-            query = urlencode(list(params.items()) if isinstance(params, Mapping) else params, doseq=True)
+            try:
+                query = urlencode(list(params.items()) if isinstance(params, Mapping) else params, doseq=True)
+            except (TypeError, ValueError):
+                # Encoding errors can include user-supplied values. Do not put
+                # those values into the public exception or its displayed chain.
+                raise InvalidRequestError("params must be a mapping or a sequence of key/value pairs") from None
             url = urlunsplit(parsed._replace(query="&".join(value for value in (parsed.query, query) if value)))
         # Only local immutable snapshots reach the binding. No Session state is
         # modified while preparing a request.
@@ -248,24 +263,37 @@ class _BaseSession:
         if json is not _UNSET and data is not None:
             raise InvalidRequestError("data and json cannot be used together")
         if json is not _UNSET:
-            body = jsonlib.dumps(json, separators=(",", ":"), allow_nan=False).encode("utf-8")
+            try:
+                body = jsonlib.dumps(json, separators=(",", ":"), allow_nan=False).encode("utf-8")
+            except (TypeError, ValueError):
+                raise InvalidRequestError("json must contain serializable JSON values") from None
             if "content-type" not in names:
                 fields.append(("Content-Type", "application/json"))
         elif data is None:
             body = b""
         elif isinstance(data, str):
-            body = data.encode("utf-8")
+            try:
+                body = data.encode("utf-8")
+            except UnicodeEncodeError:
+                raise InvalidRequestError("data must be valid UTF-8 text") from None
         elif isinstance(data, (bytes, bytearray, memoryview)):
             body = bytes(data)
         elif isinstance(data, Mapping):
-            body = urlencode(list(data.items()), doseq=True).encode("ascii")
+            try:
+                body = urlencode(list(data.items()), doseq=True).encode("ascii")
+            except (TypeError, ValueError):
+                raise InvalidRequestError("data must contain valid form values") from None
             if "content-type" not in names:
                 fields.append(("Content-Type", "application/x-www-form-urlencoded"))
         else:
             raise InvalidRequestError("data must be bytes, str, or a form mapping")
-        if isinstance(headers_order, str):
+        if isinstance(headers_order, (str, bytes, bytearray, Mapping, set, frozenset)):
             raise InvalidRequestError("headers_order must be a sequence of header names")
-        order = [header_name(name) for name in headers_order] if headers_order is not None else []
+        try:
+            order_source = iter(headers_order) if headers_order is not None else iter(())
+        except TypeError:
+            raise InvalidRequestError("headers_order must be a sequence of header names") from None
+        order = [header_name(name) for name in order_source]
         metadata = {
             "method": method.upper(),
             "url": url,

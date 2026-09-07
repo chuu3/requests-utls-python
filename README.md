@@ -1,17 +1,21 @@
 # requests-utls — Python client
 
 Python 3.11+ client for the separately maintained [requests-utls Go engine](https://github.com/chuu3/requests-utls).
-Platform wheels include a prebuilt Go shared library, a Chrome 152 profile and
+Platform wheels include a prebuilt Go shared library, built-in TLS profiles and
 the engine's dependency licenses. Installation does not require Go, a compiler,
 GitHub access, or a separately downloaded engine. Python and Go remain separate
 projects, connected through CFFI ABI 1.
 
-This is a **0.2.1 prototype**: HTTP/2 and HTTP/1.1, immutable Session defaults,
+This is a **0.x prototype**; the latest published release is 0.2.1. Development
+changes are listed under [Unreleased](CHANGELOG.md). The client supports
+HTTP/2 and HTTP/1.1, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
 async requests, proxy authentication, and explicit resource lifecycle.
 
 See [verification results](docs/verification.md) for concurrent requests and live
 fingerprint checks, and [packaging and releases](docs/releases.md) for wheel builds.
+For development and confidential reports, see [Contributing](CONTRIBUTING.md)
+and the [security policy](SECURITY.md).
 
 ## Install
 
@@ -39,7 +43,19 @@ with Session(profile=Profile.builtin("chrome_152")) as session:
 
 `Profile.builtin(...)` loads an installed profile without network access. Custom
 profiles still work through `Profile.from_file(...)` and `Profile.from_dict(...)`.
-The bundled capture retains the engine's documented profile limitations below.
+The bundled captures retain the engine's documented profile limitations below.
+
+| Builtin name | Availability |
+| --- | --- |
+| `chrome_152` | Included in published 0.2.1 wheels and this branch |
+| `chrome_150` | Added on this development branch for the next release |
+
+Use `Profile.builtin("chrome_150")` or `Profile.builtin("chrome_152")` with an
+artifact containing the selected profile. Their source files are maintained in
+the [Go repository](https://github.com/chuu3/requests-utls/tree/main/profiles),
+and each wheel records the complete builtin list and profile hashes in
+`engine.json`. They are separate captures with different extension ordering;
+Chrome 150 does not advertise extension 51764.
 
 For engine development, the loader also accepts `library_path=` or
 `REQUESTS_UTLS_LIBRARY`, in that priority order, ahead of the bundled library.
@@ -82,6 +98,13 @@ listing it multiple times places one occurrence at each position, and the number
 of entries must equal its final occurrences. Missing names are ignored.
 Unlisted fields follow in their original relative order. Pseudo-header order is
 part of the immutable profile, not `headers_order`.
+
+HTTP/1.1 has a Cookie exception: after ordering the original occurrences, the
+engine joins their nonempty values with `; ` into one field, retaining the first
+ordered Cookie field's spelling and position. If all values are empty, one
+empty Cookie field remains. Thus repeated Cookie names in `headers_order` count
+the original fields, before merging. This also applies when ALPN selects
+HTTP/1.1 from an HTTP/2-capable profile. HTTP/2 preserves separate Cookie fields.
 
 The engine calculates `Content-Length` from the final encoded request body,
 including UTF-8 strings, JSON and form data. It adds the field when the body is
@@ -160,8 +183,8 @@ early data.
 including ALPN and removal of HTTP/2 application settings. It therefore changes
 the captured TLS fingerprint. Without this override, the engine supports
 HTTP/1.1 when selected by the TLS negotiation; plain `http://` URLs also use
-HTTP/1.1. Supplied header spelling, duplicate fields and request-local order
-are preserved by the HTTP/1.1 transport.
+HTTP/1.1. Supplied header spelling and request-local order are preserved by the
+HTTP/1.1 transport, with the Cookie merging rule described above.
 
 `random_ja3=True` shuffles eligible TLS extensions for each new connection,
 keeping GREASE, padding and PSK positions fixed. It does not mutate the profile
@@ -220,6 +243,8 @@ added to origin request headers or Session representations. Proxy configuration
 is fixed per Session. `verify=True` uses system roots. `verify="ca.pem"` trusts
 only that PEM bundle; `verify=False` explicitly disables certificate validation.
 Environment proxy variables and `.netrc` are not consulted.
+See [proxy and certificate configuration](docs/proxies.md) for Charles, hostname
+verification and the effect of SSL interception on fingerprints.
 
 ## Requests, responses and limits
 
@@ -240,7 +265,9 @@ joins duplicates with `, ` and must not be used to parse Set-Cookie.
 
 `Session(decode_content=True)` is the default. The Go engine decodes gzip,
 deflate (zlib or raw), Brotli and Zstandard, including stacked Content-Encoding
-values in reverse order. `content`, `text` and `json()` use the decoded body;
+values in reverse order, with at most four non-`identity` decoding layers.
+Exceeding that depth raises `TransportError` when decoding is enabled.
+`content`, `text` and `json()` use the decoded body;
 `decoded` is true when a coding was removed. Response headers remain the
 original wire headers, so Content-Length may describe the compressed body.
 Use `decode_content=False` to retain the original body bytes. Unknown or corrupt
@@ -305,29 +332,22 @@ cannot be unloaded while Go threads exist.
 
 ## Development
 
+Use Python 3.11+ and an editable install for source development:
+
 ```sh
 python -m pip install -e '.[test]'
 python -m pytest tests/test_models.py tests/test_session_options.py
 ```
 
-Native integration tests additionally require explicit
-`REQUESTS_UTLS_LIBRARY` and `REQUESTS_UTLS_TEST_PEER` artifact paths. The test peer
-is built in the Go project; tests do not look for a sibling checkout. See the
-test and build documentation added with those artifacts.
+The [contribution guide](CONTRIBUTING.md) has the complete unit command and
+native integration setup: check out the exact Go revision in `engine.lock.json`,
+build the shared library and test peer, then provide their absolute paths through
+`REQUESTS_UTLS_LIBRARY` and `REQUESTS_UTLS_TEST_PEER`. Tests do not discover a
+sibling checkout. Editable installs use external artifacts; ordinary wheel
+builds require an explicit audited engine payload.
 
-```sh
-REQUESTS_UTLS_LIBRARY=/absolute/path/to/librequests_utls.dylib \
-REQUESTS_UTLS_TEST_PEER=/absolute/path/to/requests-utls-testpeer \
-python -m pytest -q
-```
-
-Use the library filename for your platform. Editable installations use external
-engine artifacts and profile files. Ordinary wheel builds require an explicit
-audited engine artifact; `REQUESTS_UTLS_PURE_PYTHON=1` is a development-only escape
-hatch for Python unit tests and must not be used for releases.
-
-GitHub Actions runs Python unit tests on Python 3.11–3.14. The release workflow
+Push and pull-request CI runs Python unit tests on Python 3.11–3.14 plus the
+complete native suite on Linux against the locked engine. The release workflow
 builds and audits all five native wheels, installs each in a fresh environment,
-and runs the full suite with its bundled library before publication. See
-[packaging and releases](docs/releases.md) for the pinned engine and publishing
-configuration.
+and tests its bundled library before publication. See [packaging and
+releases](docs/releases.md) for engine pins, source tags and publishing.

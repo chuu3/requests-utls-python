@@ -10,6 +10,7 @@ import struct
 import subprocess
 import sys
 import tarfile
+import tomllib
 import zipfile
 
 import pytest
@@ -35,6 +36,7 @@ def artifact(tmp_path):
     (root / "licenses").mkdir()
     (root / "native/librequests_utls.dylib").write_bytes(macho())
     (root / "profiles/chrome_152.json").write_text('{"schema_version":1}', encoding="utf-8")
+    (root / "profiles/chrome_150.json").write_text('{"schema_version":1}', encoding="utf-8")
     (root / "licenses/LICENSE").write_text("Test license fixture", encoding="utf-8")
     payload = {
         path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
@@ -51,6 +53,7 @@ def artifact(tmp_path):
         "sha256": payload["native/librequests_utls.dylib"],
         "wheel_platform": "macosx_13_0_arm64",
         "files_sha256": payload,
+        "builtin_profiles": ["chrome_150", "chrome_152"],
     }
     (root / "engine.json").write_text(json.dumps(manifest), encoding="utf-8")
     return root
@@ -75,7 +78,7 @@ def test_release_requires_explicit_artifact(monkeypatch):
 def test_valid_artifact(artifact):
     result = support.validate_artifact(artifact, "macosx_13_0_arm64")
     assert result.root == artifact.resolve()
-    assert result.files == ("engine.json", "licenses/LICENSE", "native/librequests_utls.dylib", "profiles/chrome_152.json")
+    assert result.files == ("engine.json", "licenses/LICENSE", "native/librequests_utls.dylib", "profiles/chrome_150.json", "profiles/chrome_152.json")
 
 
 @pytest.mark.parametrize("changes, message", [
@@ -87,7 +90,11 @@ def test_valid_artifact(artifact):
     ({"library": "../escape.dylib"}, "unsafe artifact path"),
     ({"sha256": "0" * 64}, "SHA-256 mismatch"),
     ({"wheel_platform": "macosx_12_0_arm64"}, "wheel_platform disagrees"),
-    ({"files_sha256": {}}, "every artifact payload file"),
+    ({"files_sha256": {}}, "profile SHA-256 mismatch"),
+    ({"builtin_profiles": []}, "nonempty list"),
+    ({"builtin_profiles": ["chrome_150", "chrome_150"]}, "unique names"),
+    ({"builtin_profiles": ["../escape"]}, "invalid profile name"),
+    ({"builtin_profiles": ["chrome_152"]}, "undeclared profile file"),
 ])
 def test_manifest_rejections(artifact, changes, message):
     mutate_manifest(artifact, **changes)
@@ -118,6 +125,41 @@ def test_rejects_missing_license(artifact):
     (artifact / "licenses/LICENSE").unlink()
     with pytest.raises(support.ArtifactError, match="include its licenses"):
         support.validate_artifact(artifact, "macosx_13_0_arm64")
+
+
+@pytest.mark.parametrize("name", ["chrome_150", "chrome_152"])
+def test_rejects_missing_declared_profile(artifact, name):
+    (artifact / "profiles" / (name + ".json")).unlink()
+    with pytest.raises(support.ArtifactError, match="missing a declared builtin profile"):
+        support.validate_artifact(artifact, "macosx_13_0_arm64")
+
+
+@pytest.mark.parametrize("name", ["chrome_150", "chrome_152"])
+def test_validates_every_declared_profile_json_and_hash(artifact, name):
+    path = artifact / "profiles" / (name + ".json")
+    path.write_bytes(b"invalid json")
+    with pytest.raises(support.ArtifactError, match="valid UTF-8 JSON"):
+        support.validate_artifact(artifact, "macosx_13_0_arm64")
+    path.write_bytes(b'{"schema_version":1,"changed":true}')
+    with pytest.raises(support.ArtifactError, match="profile SHA-256 mismatch"):
+        support.validate_artifact(artifact, "macosx_13_0_arm64")
+
+
+def test_new_profile_declarations_require_payload_hashes(artifact):
+    manifest = json.loads((artifact / "engine.json").read_bytes())
+    del manifest["files_sha256"]
+    (artifact / "engine.json").write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(support.ArtifactError, match="files_sha256 must be an object"):
+        support.validate_artifact(artifact, "macosx_13_0_arm64")
+
+
+def test_legacy_abi1_artifact_without_profile_list_remains_usable(artifact):
+    (artifact / "profiles/chrome_150.json").unlink()
+    manifest = json.loads((artifact / "engine.json").read_bytes())
+    del manifest["builtin_profiles"]
+    del manifest["files_sha256"]["profiles/chrome_150.json"]
+    (artifact / "engine.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert "profiles/chrome_152.json" in support.validate_artifact(artifact, "macosx_13_0_arm64").files
 
 
 def test_rejects_symlink(artifact):
@@ -182,6 +224,12 @@ def test_bundled_wheel_layout_and_stale_artifact_cleanup(project, artifact):
         assert "requests_utls/native/librequests_utls.dylib" in names
         assert "requests_utls/engine.json" in names
         assert "requests_utls/profiles/chrome_152.json" in names
+        assert "requests_utls/profiles/chrome_150.json" in names
+        manifest = json.loads(wheel.read("requests_utls/engine.json"))
+        assert manifest["builtin_profiles"] == ["chrome_150", "chrome_152"]
+        for name in manifest["builtin_profiles"]:
+            relative = "profiles/" + name + ".json"
+            assert manifest["files_sha256"][relative] == hashlib.sha256(wheel.read("requests_utls/" + relative)).hexdigest()
         assert "requests_utls/licenses/LICENSE" in names
         assert "requests_utls/session.py" in names
         assert not any(name.endswith(".go") for name in names)
@@ -213,3 +261,32 @@ def test_editable_build_does_not_require_engine(project):
     result = run_backend(project, "from build_backend import build_editable; build_editable('dist')")
     assert result.returncode == 0, result.stdout + result.stderr
     assert len(list((project / "dist").glob("*editable*py3-none-any.whl"))) == 1
+
+
+@pytest.mark.parametrize("damage", [None, "missing-profile", "changed-profile", "missing-profile-hash"])
+def test_release_ci_checks_all_declared_profiles(artifact, tmp_path, monkeypatch, damage):
+    ci_spec = importlib.util.spec_from_file_location("_requests_utls_ci_wheel_profiles", ROOT / "scripts/ci_wheel.py")
+    ci = importlib.util.module_from_spec(ci_spec)
+    ci_spec.loader.exec_module(ci)
+    monkeypatch.setattr(ci, "read_lock", lambda: {"commit": "a" * 40, "go_version": "1.27.1", "abi_version": 1})
+    manifest = json.loads((artifact / "engine.json").read_bytes())
+    manifest.update(go_version="go1.27.1", source_dirty=False)
+    content = {"requests_utls/" + path.relative_to(artifact).as_posix(): path.read_bytes()
+               for path in artifact.rglob("*") if path.is_file()}
+    if damage == "missing-profile":
+        del content["requests_utls/profiles/chrome_150.json"]
+    elif damage == "changed-profile":
+        content["requests_utls/profiles/chrome_150.json"] = b'{"schema_version":1,"modified":true}'
+    elif damage == "missing-profile-hash":
+        del manifest["files_sha256"]["profiles/chrome_150.json"]
+    content["requests_utls/engine.json"] = json.dumps(manifest).encode()
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    wheel = tmp_path / f"requests_utls-{version}-py3-none-macosx_13_0_arm64.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for name, data in content.items():
+            archive.writestr(name, data)
+    if damage:
+        with pytest.raises(ValueError, match="profile"):
+            ci.verify_wheel(wheel, "macosx_13_0_arm64")
+    else:
+        assert ci.verify_wheel(wheel, "macosx_13_0_arm64") == "macosx_13_0_arm64"

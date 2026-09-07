@@ -18,7 +18,10 @@ independently as long as their ABI remains compatible.
 For a private engine repository, the Python repository needs the Actions secret
 `GO_ENGINE_SSH_KEY`: a dedicated SSH deploy key with read-only access to the Go
 repository. The workflow disables persisted checkout credentials. This key is
-only for build-time source access; users never need it.
+only for build-time source access; users never need it. Once the engine is
+public, checkouts with no SSH key use HTTPS. External fork PRs can then run the
+ordinary Linux native integration job without repository secrets. While the
+engine remains private, a fork PR without that key cannot fetch it.
 
 ## Platform wheels
 
@@ -85,11 +88,13 @@ successful upload creates it.
 
 Dispatch **Build and publish bundled wheels** from `main` with `publish=false`
 to build, audit and test without uploading. The five wheels remain downloadable
-as private Actions artifacts. After configuring the PyPI publisher, dispatch
+as Actions artifacts subject to the repository's visibility. After configuring the PyPI publisher, dispatch
 with `publish=true`. The publishing job downloads exactly five tested wheels,
 validates their versions and platforms, runs strict Twine checks, and uploads
 them with attestations. It does not publish GitHub repositories or source
 archives.
+
+## Versions and source tags
 
 For subsequent releases, update the Python version in `pyproject.toml` and
 `src/requests_utls/__init__.py`; update `engine.lock.json` when adopting a new
@@ -97,3 +102,27 @@ engine revision. The native artifact's
 release label follows the Python package version in `scripts/ci_wheel.py`; the
 exact engine identity remains its independent commit SHA. A published PyPI
 file cannot be overwritten: fixes need a new package version.
+
+When preparing a release, update the README's published-version and builtin
+availability notes as well as the changelog. Profiles declared by the engine's
+`profiles/builtin.json` are copied into its artifact and listed in
+`engine.json`; all declared profiles must survive wheel repair with valid hashes.
+
+Patch releases in the 0.x series preserve public API and profile semantics except
+for documented correctness and security fixes. Planned breaking changes require
+a minor version and migration notes. ABI-incompatible engine changes require an
+explicit ABI revision and coordinated Python binding support; an engine version
+label alone is not an ABI compatibility guarantee.
+
+For each new release, retain the tested Python commit and exact engine pin in
+the release notes. After the five-platform build and publication succeed, create
+an annotated `vX.Y.Z` tag at that tested Python commit, rather than whatever
+`main` points to later. Tags are maintained separately from the manually
+dispatched publishing workflow; creating a tag does not publish to PyPI. Do not
+move or reuse a published version tag. The Go project may maintain its own
+version tags independently; `engine.lock.json` continues to pin its full commit.
+
+Historical release evidence may refer to commits that predate this tag policy.
+Do not infer that a historical source tag exists from a PyPI version number.
+See [verification](verification.md) for the recorded 0.2.1 source identities and
+installed-wheel results, and [Contributing](../CONTRIBUTING.md) for source tests.

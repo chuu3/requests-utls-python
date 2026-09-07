@@ -1,14 +1,48 @@
-# Verification — 2026-09-06
+# Verification
 
-The original prototype checks below used macOS arm64, CPython 3.11.9 and the
-separately built Go 1.27.1 engine, native ABI 1. They predate bundled platform
-wheels. The release workflow now builds and tests installed wheels on all five
-supported targets; see [packaging and releases](releases.md).
+Results below identify the release or prototype actually checked. They are
+historical evidence for those source revisions, not a claim that later changes
+have already passed the same checks. See [packaging and releases](releases.md)
+for the current build procedure.
 
-## Bundled platform wheels
+## Published 0.2.1 wheels
 
-[Release build 34031300350](https://github.com/chuu3/requests-utls-python/actions/runs/34031300350)
-passed all five platform jobs using Python commit
+[Release run 34096309485](https://github.com/chuu3/requests-utls-python/actions/runs/34096309485)
+built, audited and tested all five wheels, then successfully published version
+0.2.1 to PyPI through Trusted Publishing. The exact source identities were:
+
+- Python: `3d4e84a7ca20dfb3f6d409c5e8c835b403b52515`.
+- Go engine: `13ea2f55c4fed7505c2933cfe8dbd65ec64cdcb7`.
+- Go toolchain: 1.27.1; native ABI: 1.
+
+Each job installed its wheel in a fresh virtual environment and ran the suite
+against the bundled engine and an independent local test peer, without an
+external native library override.
+
+| Wheel target | Installed package tests |
+| --- | --- |
+| manylinux_2_28_x86_64 | 245 passed |
+| manylinux_2_28_aarch64 | 245 passed |
+| macosx_13_0_arm64 | 245 passed |
+| macosx_13_0_x86_64 | 245 passed |
+| win_amd64 | 243 passed, 2 POSIX-only checks skipped |
+
+The Windows skips were
+`test_finalized_wheel_is_readable_outside_the_build_container` (POSIX permission
+bits) and `test_inherited_session_fails_before_entering_go` (POSIX `fork`). Their
+names and reasons are established by the release's explicit `skipif`
+declarations; the quiet pytest log reports the aggregate count.
+
+The five-wheel release set passed strict Twine checks and the publishing job
+succeeded. It contains no sdist or universal wheel. Before release, the Python
+3.11–3.14 unit matrix and Go Linux/macOS/Windows CI also passed. These checks
+exercise local protocol behavior and packaging; the separate historical
+[0.2.0 profile acceptance](profile-acceptance.md) records the bulk live TLS
+fingerprint comparison and its limitations.
+
+## Historical bundled-wheel dry run
+
+The earlier release build 34031300350 passed all five platform jobs using Python commit
 `0dc71d7`, Go commit `29e5d709117dac8086d68ae24d1f33c97930d789`, Go 1.27.1 and
 native ABI 1. Each job built and audited a wheel, installed it into a new
 virtual environment, and exercised the bundled engine with no external library
@@ -33,7 +67,10 @@ matrix also passed, including 10 native packaging guard tests per system.
 The release workflow was dispatched with `publish=false`; this verification
 does not imply that the files have been uploaded to PyPI.
 
-## Local tests and independent installation
+## Original prototype: local tests and independent installation
+
+The original checks used macOS arm64, CPython 3.11.9 and the separately built
+Go 1.27.1 engine, native ABI 1. They predate bundled platform wheels.
 
 **55 tests passed**: 35 model/input tests and 20 integration cases using a real
 shared library and a local TLS/HTTP2 peer. Integration coverage includes:
@@ -76,13 +113,13 @@ keeps an OS loading reference for process lifetime and wraps a borrowed CFFI
 handle, with `RTLD_NODELETE` where available. After the fix, **20 independent
 wheel test processes each passed all 33 cases and exited with status 0**. This
 includes forced collection/reload subprocess checks within every suite. Those
-33-case runs preceded the additional resumption tests; the current 55-case
-suite retains the same lifecycle checks.
+33-case runs preceded the additional resumption tests; the later 55-case
+prototype suite retained the same lifecycle checks.
 
 ## Live TLS fingerprint and ordering
 
-Endpoint: `https://tls.peet.ws/api/all`, reached through the user's authenticated HTTP CONNECT proxy 2.0 Basic
-authenticated HTTP CONNECT proxy.
+Endpoint: `https://tls.peet.ws/api/all`, reached through an authenticated HTTP
+CONNECT proxy.
 
 [The sanitized report](peet-proxy-python.json) records **4/4 successful probes**:
 two threads sharing a Session, then two asyncio tasks sharing an AsyncSession.
@@ -99,7 +136,7 @@ This endpoint can close connections with GOAWAY; the local held-stream tests,
 not this live probe, establish actual multiplexing on one connection. Matching
 the supplied Chrome 152 sample does not implement complete browser behavior:
 the profile's explicit advertisement-only TLS limitations still apply.
-No proxy credentials, authenticated HTTP CONNECT proxy session ID, client IP or raw capture is stored.
+No proxy credentials, proxy session identifiers, client IP or raw capture is stored.
 
 A [second live report](peet-proxy-python-duplicate-cookies.json) specifically
 checks two separate Cookie fields with duplicate `x-a` fields. All four probes
@@ -143,8 +180,9 @@ to reproduce this resumption-specific check.
 
 ## Reproduce
 
-Build the shared library and test peer in the Go project (`make shared testpeer`)
-or obtain matching artifacts, then run in this project:
+Follow the [contribution guide](../CONTRIBUTING.md#native-integration) to build
+the shared library and test peer from the current `engine.lock.json`, or obtain
+matching artifacts. Then run in this project:
 
 ```sh
 python -m pip install -e '.[test]'
@@ -156,6 +194,8 @@ python -m pytest -q
 Use a `.so` on Linux or `.dll` and `.exe` on Windows. Native artifacts must match
 the process OS and architecture. The integration tests require these explicit
 paths; they never discover or build a sibling Go checkout.
+Testing today's lock is a new verification; reproducing a historical record
+requires that record's Python and Go revisions.
 
 For an opt-in live check, provide `REQUESTS_UTLS_PROXY`,
 `REQUESTS_UTLS_PROXY_USERNAME` and `REQUESTS_UTLS_PROXY_PASSWORD` in the environment.

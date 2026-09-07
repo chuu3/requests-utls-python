@@ -137,9 +137,11 @@ def _cookie_request(index):
 def _check_cookie_echo(protocol, echo, index, body, expected):
     assert base64.b64decode(echo["body_base64"]) == body.encode("utf-8")
     assert _fields(echo)["content-length"] == [str(len(body.encode("utf-8")))]
-    assert _fields(echo)["cookie"] == [f"first={index}", f"second={index}"]
     if protocol == "h2":
+        assert _fields(echo)["cookie"] == [f"first={index}", f"second={index}"]
         assert echo["headers"] == expected
+    else:
+        assert _fields(echo)["cookie"] == [f"first={index}; second={index}"]
 
 
 def test_generated_content_length_participates_in_cookie_occurrence_order(generated_endpoint):

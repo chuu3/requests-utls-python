@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- Bundle Chrome 150 and 152 from a single maintained engine profile index;
+  validate every declared profile and its hash while retaining legacy ABI 1
+  artifact compatibility. Both profiles can be loaded offline with Profile.builtin.
+- Combine multiple Cookie fields with `; ` only after actual HTTP/1.1 selection,
+  retaining the first ordered occurrence's spelling and position. HTTP/2 keeps
+  separate Cookie fields. Ordering refers to occurrences before combining.
+- Normalize malformed headers, proxy authentication, excessive timeouts and
+  invalid request encoding inputs to InvalidRequestError. Add regressions for
+  asynchronous lifecycle and certificate trust through H1/H2 CONNECT routes.
+- Handle generated H1 field ordering after ALPN when the peer selects H2.
+- Run Linux native integration tests on pushes and pull requests using the exact
+  engine lock, alongside the Python 3.11–3.14 unit matrix. Include validation and
+  async lifecycle tests in the unit job; public engine checkouts need no secret.
+- Document contributions, compatibility and source tags, confidential security
+  reporting, and Charles proxy/certificate behavior. Retain historical evidence
+  and record the published 0.2.1 wheel checks separately.
+- Bound automatic response decoding to four non-identity layers in the updated
+  engine, while retaining limits on encoded, intermediate and final body bytes.
+
 ## 0.2.1
 
 - Calculate request Content-Length from the final body bytes for HTTP/1.1 and
