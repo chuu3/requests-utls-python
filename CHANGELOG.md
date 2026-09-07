@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1
+
+- Calculate request Content-Length from the final body bytes for HTTP/1.1 and
+  HTTP/2, replacing a supplied value while preserving its position and HTTP/1.1
+  field name spelling. Multiple Content-Length fields remain invalid.
+- Include automatically generated Content-Length in request-level
+  `headers_order`, even when absent from the supplied headers. Nonempty bodies
+  and POST/PUT/PATCH requests receive a length, including zero for empty bodies.
+- Verify ordering among repeated cookie fields, connection reuse, and concurrent
+  requests without modifying caller headers or Session defaults. HTTP/1.1 keeps
+  persistent connections by default without injecting a Connection header;
+  explicitly supplied Connection fields follow `headers_order`.
+
+This release bundles the updated engine and retains ABI version 1.
+
 ## 0.2.0
 
 - Decode gzip, zlib/raw deflate, Brotli and Zstandard responses by default in the

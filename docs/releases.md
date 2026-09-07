@@ -91,8 +91,9 @@ validates their versions and platforms, runs strict Twine checks, and uploads
 them with attestations. It does not publish GitHub repositories or source
 archives.
 
-For subsequent releases, update the Python version in `pyproject.toml`; update
-`engine.lock.json` when adopting a new engine revision. The native artifact's
+For subsequent releases, update the Python version in `pyproject.toml` and
+`src/requests_utls/__init__.py`; update `engine.lock.json` when adopting a new
+engine revision. The native artifact's
 release label follows the Python package version in `scripts/ci_wheel.py`; the
 exact engine identity remains its independent commit SHA. A published PyPI
 file cannot be overwritten: fixes need a new package version.

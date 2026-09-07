@@ -6,7 +6,7 @@ the engine's dependency licenses. Installation does not require Go, a compiler,
 GitHub access, or a separately downloaded engine. Python and Go remain separate
 projects, connected through CFFI ABI 1.
 
-This is a **0.2.0 prototype**: HTTP/2 and HTTP/1.1, immutable Session defaults,
+This is a **0.2.1 prototype**: HTTP/2 and HTTP/1.1, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
 async requests, proxy authentication, and explicit resource lifecycle.
 
@@ -77,11 +77,33 @@ Request header spelling is preserved for HTTP/1.1; HTTP/2 lowercases names on
 the wire. Lookup and `headers_order` matching are case-insensitive.
 `Headers.multi_items()` returns lowercase names, while `Headers.raw_items()`
 retains input spelling. An omitted or empty order preserves
-the exact input sequence. Listing a name once groups all its values together;
+the relative order of supplied fields. Listing a name once groups all its values together;
 listing it multiple times places one occurrence at each position, and the number
-of entries must equal its supplied occurrences. Missing names are ignored.
+of entries must equal its final occurrences. Missing names are ignored.
 Unlisted fields follow in their original relative order. Pseudo-header order is
 part of the immutable profile, not `headers_order`.
+
+The engine calculates `Content-Length` from the final encoded request body,
+including UTF-8 strings, JSON and form data. It adds the field when the body is
+nonempty or the method is `POST`, `PUT` or `PATCH`; an empty body on those methods
+sends `Content-Length: 0`. Empty `GET` and `HEAD` requests do not gain the field
+unless one was supplied. A single supplied value is replaced with the actual
+byte count, preserving its HTTP/1.1 spelling; repeated `Content-Length` fields
+are rejected. The generated field participates in `headers_order`:
+
+```python
+response = session.post(
+    url,
+    data="雪🙂",
+    headers=[("cookie", "a=1"), ("x-marker", "middle"), ("cookie", "b=2")],
+    headers_order=["cookie", "content-length", "x-marker", "cookie"],
+)
+```
+
+Here the HTTP/2 fields are sent as `cookie`, `content-length: 7`, `x-marker`,
+then the second `cookie`. HTTP/1.1 connection reuse is implicit; the engine does
+not add `Connection: keep-alive` by default. An explicitly supplied `Connection`
+field participates in ordering for HTTP/1.1 and is rejected for HTTP/2.
 
 Session headers are defaults: request fields replace all default fields with the
 same name, while preserving the request's duplicate entries. Remaining defaults

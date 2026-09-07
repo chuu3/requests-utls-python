@@ -9,7 +9,7 @@ from .models import Headers, Profile, Response
 from .cookies import Cookie, ResponseCookies
 from .session import AsyncSession, Session
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     "AsyncSession", "Session", "Headers", "Profile", "Response", "get", "post",
