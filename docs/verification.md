@@ -5,6 +5,59 @@ historical evidence for those source revisions, not a claim that later changes
 have already passed the same checks. See [packaging and releases](releases.md)
 for the current build procedure.
 
+## Development checks: Chrome 150 and HTTP/1.1 fallback
+
+The maintenance changes were checked with Python source
+`1ec9031063a8e8aa85464b6d7c45c61bd68c423e` and its locked Go engine
+`0de755f312aef3019857efa15c47bc72cf3d2602`. These are development checks;
+the latest published package remains 0.2.1.
+
+[Python CI 34101668331](https://github.com/chuu3/requests-utls-python/actions/runs/34101668331)
+passed on Python 3.11, 3.12, 3.13 and 3.14, each with 231 unit tests passed and
+one installed-wheel-only check skipped. Linux native integration passed 336
+tests, with that same installed-wheel-only check skipped.
+
+[Five-platform wheel run 34101719141](https://github.com/chuu3/requests-utls-python/actions/runs/34101719141)
+built and audited the same source revision, then installed every wheel in a
+fresh environment and tested its bundled engine and both builtin profiles:
+
+| Wheel target | Installed package tests |
+| --- | --- |
+| manylinux_2_28_x86_64 | 337 passed |
+| manylinux_2_28_aarch64 | 337 passed |
+| macosx_13_0_arm64 | 337 passed |
+| macosx_13_0_x86_64 | 337 passed |
+| win_amd64 | 335 passed, 2 POSIX-only checks skipped |
+
+This run used `publish=false`; the publishing job was skipped. These artifacts
+are development builds, not a replacement for the published 0.2.1 files.
+
+[Go CI 34101337617](https://github.com/chuu3/requests-utls/actions/runs/34101337617)
+passed on Linux, macOS and Windows; all three native artifacts include both
+Chrome profiles and dependency license notices.
+[Security and upstream checks 34101337667](https://github.com/chuu3/requests-utls/actions/runs/34101337667)
+also passed. The local Go race suite and vet checks passed.
+
+The added protocol checks cover H2-capable profiles negotiating HTTP/1.1,
+Cookie combination after occurrence-based ordering, original field spelling
+and position, computed Content-Length, empty Cookie values, connection reuse,
+request isolation, and unchanged separate Cookie fields on HTTP/2. Local
+untrusted TLS peers establish that default verification rejects their
+certificates, while the explicit test CA or `verify=False` succeeds, for both
+HTTP versions and authenticated CONNECT routes.
+
+A live Chrome 150 capture comparison passed at `https://tls.peet.ws/api/all`;
+direct requests with both builtins returned HTTP/2 JSON. A separate forced
+HTTP/1.1 request also returned valid Peet JSON. With local Charles interception,
+an H2-capable profile negotiated HTTP/1.1 with `verify=False`, but the proxy
+route returned HTML for both minimal headers and duplicate Cookie headers.
+The Charles raw request inspection then confirmed one
+`Cookie: first=one; second=two` field at the first ordered Cookie position,
+followed by `X-Order`, User-Agent, Accept and the generated Host. This verifies
+Cookie combination on the client-to-Charles connection; a Peet Cookie echo
+through that proxy was unavailable. The automated Cookie wire assertions above
+use independent local peers.
+
 ## Published 0.2.1 wheels
 
 [Release run 34096309485](https://github.com/chuu3/requests-utls-python/actions/runs/34096309485)

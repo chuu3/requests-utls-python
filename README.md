@@ -53,7 +53,7 @@ The bundled captures retain the engine's documented profile limitations below.
 Use `Profile.builtin("chrome_150")` or `Profile.builtin("chrome_152")` with an
 artifact containing the selected profile. Their source files are maintained in
 the [Go repository](https://github.com/chuu3/requests-utls/tree/main/profiles),
-and each wheel records the complete builtin list and profile hashes in
+and new wheels record the complete builtin list and profile hashes in
 `engine.json`. They are separate captures with different extension ordering;
 Chrome 150 does not advertise extension 51764.
 
