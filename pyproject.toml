@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "requests-utls"
-version = "0.3.0"
+version = "0.3.1"
 description = "Concurrent HTTP client with a bundled uTLS engine and precise TLS/HTTP2 profiles"
 readme = "README.md"
 requires-python = ">=3.11"

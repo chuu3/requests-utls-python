@@ -1,9 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 — 2026-10-02
 
-- Adopt the engine fix for proxy CONNECT socket timeout classification.
+- Fix proxy CONNECT failures being classified as invalid responses when a socket
+  deadline fires before the context timer. They now consistently raise Timeout
+  with stage `proxy_connect`; raw proxy response text remains suppressed.
 - Fetch the public Go engine without a deploy key, including in fork PR checks.
+- Bundle engine `8fee11c9e4579426ae059e6d92825972aeba11bb` with clarified third-party notices.
+- No public API, TLS profile or timeout-default changes. Native ABI remains 1.
 
 ## 0.3.0 — 2026-10-02
 
