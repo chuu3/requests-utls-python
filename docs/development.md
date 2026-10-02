@@ -89,13 +89,10 @@ For a bug fix, add a regression at the boundary affected: Python validation,
 async lifecycle, native requests, or actual wire behavior. Include the trigger,
 resulting behavior and relevant test results in the PR description.
 
-While the engine repository is private, CI uses the maintainer's read-only
-`GO_ENGINE_SSH_KEY` deploy key. Fork pull requests do not receive that secret and
-cannot fetch a private engine. Once the engine is public, an empty SSH key uses
-HTTPS and external forks can run the same native job without a secret. Checkout
-credentials are not persisted; the workflow uses `pull_request`, not
-`pull_request_target`, and has read-only repository permissions. Contributors
-should not add credentials to a PR to make a private checkout succeed.
+The public engine is fetched over HTTPS without a deploy key. External fork PRs
+use the same native integration job after maintainer workflow approval. Checkout
+credentials are not persisted; the workflow uses `pull_request` and read-only
+repository permissions. Contributors do not need repository secrets.
 
 ## Compatibility and reports
 
