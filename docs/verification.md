@@ -234,7 +234,7 @@ to reproduce this resumption-specific check.
 
 ## Reproduce
 
-Follow the [contribution guide](../CONTRIBUTING.md#native-integration) to build
+Follow the [contribution guide](development.md#native-integration) to build
 the shared library and test peer from the current `engine.lock.json`, or obtain
 matching artifacts. Then run in this project:
 
