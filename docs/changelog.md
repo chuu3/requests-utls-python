@@ -1,5 +1,10 @@
 # Full changelog
 
+## Unreleased
+
+- Adopt the engine fix for proxy CONNECT socket timeout classification.
+- Fetch the public Go engine without a deploy key, including in fork PR checks.
+
 ## 0.3.0 — 2026-10-02
 
 - Add `connect_timeout`, `proxy_connect_timeout`, `tls_handshake_timeout`,

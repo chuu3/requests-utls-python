@@ -20,3 +20,8 @@ ownership, and report actual validation. Use local peers and synthetic data;
 remove credentials and private captures. Document compatibility changes and
 retain license notices. See [releases](docs/releases.md) for wheel validation and
 [SECURITY.md](SECURITY.md) for confidential reports.
+
+Changes to `main` go through pull requests and must pass required CI checks.
+External contributor workflows require maintainer approval to run. Engine
+checkouts use public HTTPS and do not require repository secrets. Published
+`v*` tags cannot be moved or deleted.

@@ -15,13 +15,11 @@ the Go project's `scripts/pack_native.py`. Go source is never vendored into the
 Python source tree or shipped in wheels. Python and Go versions may evolve
 independently as long as their ABI remains compatible.
 
-For a private engine repository, the Python repository needs the Actions secret
-`GO_ENGINE_SSH_KEY`: a dedicated SSH deploy key with read-only access to the Go
-repository. The workflow disables persisted checkout credentials. This key is
-only for build-time source access; users never need it. Once the engine is
-public, checkouts with no SSH key use HTTPS. External fork PRs can then run the
-ordinary Linux native integration job without repository secrets. While the
-engine remains private, a fork PR without that key cannot fetch it.
+The engine repository is public. Workflows fetch its pinned revision over HTTPS
+without a deploy key and disable persisted checkout credentials. External fork
+PRs can run native integration checks without repository secrets after maintainer
+workflow approval. PyPI publication uses Trusted Publishing; the `pypi`
+environment accepts deployments only from `main`.
 
 ## Platform wheels
 
