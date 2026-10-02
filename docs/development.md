@@ -115,3 +115,11 @@ tickets from captures and logs. Only contribute profiles with a documented
 source and permission to redistribute their sanitized protocol configuration.
 Retain license notices in source and binary artifacts. Report vulnerabilities
 using [SECURITY.md](../SECURITY.md).
+
+## Dependency maintenance
+
+Ordinary Python and GitHub Actions updates are checked monthly and grouped.
+Actions stay pinned to full commit SHAs; major Python updates remain separate.
+Security alerts and automated security fixes are enabled independently of this
+schedule. Review compatibility and CI before merging; do not auto-merge. Engine
+updates require an exact engine.lock.json pin and native integration validation.
