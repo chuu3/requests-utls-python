@@ -17,6 +17,9 @@ fingerprint checks, and [packaging and releases](../docs/releases.md) for wheel 
 For development and confidential reports, see [Contributing](../CONTRIBUTING.md)
 and the [security policy](../SECURITY.md).
 
+See [phase timeouts and error diagnostics](timeouts.md) for per-phase budgets
+and structured error stages.
+
 ## Install
 
 ```sh

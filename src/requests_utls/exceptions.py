@@ -2,7 +2,14 @@
 
 
 class RequestError(Exception):
-    """Base class for client and transport errors."""
+    """Base class for client and transport errors.
+
+    stage/elapsed_ms describe the failed native operation when available.
+    elapsed_ms is measured wall time for that phase, not the whole request.
+    """
+
+    stage = None
+    elapsed_ms = None
 
 
 class InvalidRequestError(RequestError, ValueError):

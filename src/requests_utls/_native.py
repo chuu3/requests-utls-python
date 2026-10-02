@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -44,10 +45,19 @@ def check_process(pid):
 
 def result_error(code, payload, redact=lambda value: value):
     try:
-        message = json.loads(payload).get("message", f"native error {code}")
+        info = json.loads(payload)
+        message = info.get("message", f"native error {code}")
     except (ValueError, AttributeError, TypeError):
+        info = {}
         message = f"native error {code}"
-    return native_error(code, redact(str(message)))
+    error = native_error(code, redact(str(message)))
+    stage = info.get("stage")
+    elapsed = info.get("elapsed_ms")
+    if stage in {"request", "queue", "connect", "proxy_connect", "tls", "write", "response_headers", "body"}:
+        error.stage = stage
+        if isinstance(elapsed, (int, float)) and not isinstance(elapsed, bool) and math.isfinite(elapsed) and elapsed >= 0:
+            error.elapsed_ms = elapsed
+    return error
 
 
 def _open_process_library(ffi, path):

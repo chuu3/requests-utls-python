@@ -103,6 +103,11 @@ class _BaseSession:
         headers=None,
         cookies=None,
         timeout=30,
+        connect_timeout=None,
+        proxy_connect_timeout=None,
+        tls_handshake_timeout=None,
+        response_header_timeout=None,
+        body_timeout=None,
         max_concurrent_requests=64,
         max_pending_requests=256,
         max_response_bytes=64 * 1024 * 1024,
@@ -130,6 +135,16 @@ class _BaseSession:
             "max_response_bytes": _limit("max_response_bytes", max_response_bytes, 1),
             "max_unprocessed_retries": _limit("max_unprocessed_retries", max_unprocessed_retries, -1),
         }
+        for name, value in (("connect_timeout", connect_timeout),
+                            ("proxy_connect_timeout", proxy_connect_timeout),
+                            ("tls_handshake_timeout", tls_handshake_timeout),
+                            ("response_header_timeout", response_header_timeout),
+                            ("body_timeout", body_timeout)):
+            if value is not None:
+                try:
+                    config[name + "_ms"] = _timeout_ms(value)
+                except InvalidRequestError:
+                    raise InvalidRequestError(f"{name} must be a positive number of seconds or None") from None
         secrets = []
         if proxy is not None:
             if not isinstance(proxy, str):

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Pin the Go engine to `b1311497c6bf72514aadfd3656087619d8485b69` (ABI 1), including x/net v0.59.0, compression updates and phase timeouts.
+
+- Add connection, proxy CONNECT, TLS, response-header and body phase timeouts
+  with structured error stages; normalize socket deadline errors consistently.
+- Batch ordinary Dependabot updates monthly and refresh compression/CI dependencies.
+
 - Shorten root documentation; move detailed usage, development and release history to `docs/`.
 
 - Clarify that redirect decisions and Cookie state management belong to callers;
