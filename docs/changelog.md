@@ -1,17 +1,21 @@
 # Full changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-02
 
-- Pin the Go engine to `b1311497c6bf72514aadfd3656087619d8485b69` (ABI 1), including x/net v0.59.0, compression updates and phase timeouts.
+- Add `connect_timeout`, `proxy_connect_timeout`, `tls_handshake_timeout`,
+  `response_header_timeout` and `body_timeout` to Session and AsyncSession.
+- Expose `stage` and `elapsed_ms` on request errors; consistently classify socket
+  deadline failures as Timeout and isolate HTTP/2 header/body timeouts per stream.
+- Connection setup now uses separate 10-second connect, proxy CONNECT and TLS
+  budgets instead of one combined budget. The existing total request timeout
+  still bounds all phases; `timeout=None` does not disable these phase defaults.
+  Header/body phase limits remain disabled by default.
+- Bundle engine `2d2ffad802b09954d88a946c93689cc55e1eb4d0`, with x/net v0.59.0,
+  updated compression libraries and unchanged ABI 1.
+- Batch ordinary dependency updates monthly, refresh pinned CI actions and
+  simplify documentation. Redirects and Cookie state remain caller-owned.
 
-- Add connection, proxy CONNECT, TLS, response-header and body phase timeouts
-  with structured error stages; normalize socket deadline errors consistently.
-- Batch ordinary Dependabot updates monthly and refresh compression/CI dependencies.
-
-- Shorten root documentation; move detailed usage, development and release history to `docs/`.
-
-- Clarify that redirect decisions and Cookie state management belong to callers;
-  response Cookie parsing and existing request/connection behavior are unchanged.
+See [timeout semantics](timeouts.md) for defaults and error stage definitions.
 
 ## 0.2.2 — 2026-09-07
 
