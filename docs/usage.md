@@ -280,6 +280,9 @@ verification and the effect of SSL interception on fingerprints.
 
 ## Redirect and Cookie ownership
 
+For precedence conflicts, server deletions, concurrency and caller responsibilities,
+see [the shared design rationale (中文)](https://github.com/chuu3/requests-utls/blob/main/docs/redirects-and-cookies.md).
+
 The client executes the request you submit and returns any 3xx response with its
 status, Location, Set-Cookie fields, and body. It does not follow redirects.
 `allow_redirects` defaults to `False`; `True` raises `InvalidRequestError`.

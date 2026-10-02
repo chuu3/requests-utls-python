@@ -25,3 +25,8 @@ Changes to `main` go through pull requests and must pass required CI checks.
 External contributor workflows require maintainer approval to run. Engine
 checkouts use public HTTPS and do not require repository secrets. Published
 `v*` tags cannot be moved or deleted.
+
+Use `type(scope): description` for commit messages and PR titles, for example
+`fix(proxy): preserve timeout classification` or `docs(design): explain cookie ownership`.
+Choose the type for the change: `fix`, `feat`, `docs`, `chore`, `build`, `ci`,
+`test` or `refactor`. The final merge or squash commit must use the same format.
