@@ -5,6 +5,9 @@ Sessions, and ordered HTTP/1.1 and HTTP/2 headers. Platform wheels bundle the
 separate [Go engine](https://github.com/chuu3/requests-utls); no Go compiler is
 needed to install or use the package.
 
+Version **0.3.2** adds optional connection lifetime limits and includes HTTP/2
+security fixes. Built-in profiles remain Chrome 150 and 152.
+
 ## Quick start
 
 ```sh

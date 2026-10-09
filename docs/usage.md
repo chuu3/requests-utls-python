@@ -6,7 +6,7 @@ the engine's dependency licenses. Installation does not require Go, a compiler,
 GitHub access, or a separately downloaded engine. Python and Go remain separate
 projects, connected through CFFI ABI 1.
 
-This is a **0.3.1 release**. Release notes and development changes are listed
+This is a **0.3.2 release**. Release notes and development changes are listed
 in the [changelog](../CHANGELOG.md). The client supports
 HTTP/2 and HTTP/1.1, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and

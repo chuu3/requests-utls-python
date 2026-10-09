@@ -1,6 +1,6 @@
 # 连接最大寿命
 
-`Session` 和 `AsyncSession` 可在保持同一个会话的情况下，提前替换过老的 TCP/TLS 连接。**默认关闭。** Python 包与 native 引擎须配套使用，`engine.lock.json` 固定对应的 Go 提交和构建工具链。
+`Session` 和 `AsyncSession` 可在保持同一个会话的情况下，提前替换过老的 TCP/TLS 连接。**默认关闭，Python 0.3.2 起提供。** Python 包与 native 引擎须配套使用，`engine.lock.json` 固定对应的 Go 提交和构建工具链。
 
 | 参数 | 单位 / 类型 | 默认值 | 含义 |
 | --- | --- | --- | --- |
