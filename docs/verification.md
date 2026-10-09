@@ -267,7 +267,7 @@ Add `--duplicate-cookies` to repeat the separate Cookie field probe.
 
 ## Connection lifetime — local verification, 2026-10-09
 
-The unreleased lifetime API was tested against the shared library and test peer
+The connection-lifetime API was tested against the shared library and test peer
 built from the paired local Go changes. The complete Python suite passed:
 **425 passed, 1 skipped** (the installed-wheel-only test). After the final native
 input-validation change, lifetime-specific tests passed again: **37 passed**.
@@ -288,6 +288,20 @@ real H2/H1 connection identities, Cookie configuration and accepted TLS resumpti
 across rotation. The paired Go suite covers draining, cancellation, stream
 reservations, POST execution counts, and three synthetic 100-second proxy cycles.
 
-This validates local source and native artifacts, not a released wheel. The
-branch pins the matching implementation commit in `engine.lock.json`. This
+This validates the local source and native artifacts.
+`engine.lock.json` pins the matching implementation commit. This
 public record covers synthetic local tests only.
+
+
+## Security update and three-pass review — 2026-10-09
+
+The engine pin includes x/net v0.60.0 and the corresponding copied H2 fixes,
+built with Go 1.27.2. The full suite against that engine passed again:
+**425 passed, 1 skipped** (the installed-wheel-only test).
+
+Three review passes checked the paired transport/security implementation,
+Python/native validation and compatibility, and documentation/build pins and
+committed-content privacy. Normal repeated response headers retain their order;
+unsafe H2 framing headers are sanitized in the ordered output too. Session
+parameters and ABI version 1 are unchanged by the security update. The engine
+verification record documents the scan and the unused OpenPGP module notice.

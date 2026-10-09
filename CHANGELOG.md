@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Use the engine with x/net v0.60.0 HTTP/2 security fixes and Go 1.27.2. H2
+  responses omit unsafe framing headers while preserving normal duplicates.
+
 - Anonymize source identifiers in archived profile acceptance reports.
 
 - Add `max_connection_age` and `connection_age_jitter` to Session and AsyncSession,

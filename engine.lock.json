@@ -1,6 +1,6 @@
 {
   "repository": "chuu3/requests-utls",
-  "commit": "1ea4648103ed28f20b0e551b8fa729b4773b980e",
-  "go_version": "1.27.1",
+  "commit": "c2505382021bfcd62bc1685080610d28bd87bde3",
+  "go_version": "1.27.2",
   "abi_version": 1
 }

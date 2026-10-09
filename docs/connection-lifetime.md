@@ -1,6 +1,6 @@
 # 连接最大寿命
 
-`Session` 和 `AsyncSession` 可在保持同一个会话的情况下，提前替换过老的 TCP/TLS 连接。**默认关闭；本功能尚未发布。** 使用包含此实现的配套 native 引擎，本分支的 `engine.lock.json` 固定对应 Go 提交。
+`Session` 和 `AsyncSession` 可在保持同一个会话的情况下，提前替换过老的 TCP/TLS 连接。**默认关闭。** Python 包与 native 引擎须配套使用，`engine.lock.json` 固定对应的 Go 提交和构建工具链。
 
 | 参数 | 单位 / 类型 | 默认值 | 含义 |
 | --- | --- | --- | --- |
@@ -30,4 +30,4 @@ async with AsyncSession(profile=profile, max_connection_age=60, connection_age_j
 
 跨语言字段对应：`max_connection_age` → Go `MaxConnectionAge` → JSON `max_connection_age_ms`；`connection_age_jitter` → Go `ConnectionAgeJitter` → JSON `connection_age_jitter_ms`。Go 使用 `time.Duration`；C ABI 仍为 1。
 
-完整 Go/native 示例见 [引擎文档](https://github.com/chuu3/requests-utls/blob/1ea4648103ed28f20b0e551b8fa729b4773b980e/docs/connection-lifetime.md)，本机集成方法见 [开发指南](development.md)。
+完整 Go/native 示例见 [引擎文档](https://github.com/chuu3/requests-utls/blob/c2505382021bfcd62bc1685080610d28bd87bde3/docs/connection-lifetime.md)，本机集成方法见 [开发指南](development.md)。

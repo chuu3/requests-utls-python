@@ -343,7 +343,10 @@ values in reverse order, with at most four non-`identity` decoding layers.
 Exceeding that depth raises `TransportError` when decoding is enabled.
 `content`, `text` and `json()` use the decoded body;
 `decoded` is true when a coding was removed. Response headers remain the
-original wire headers, so Content-Length may describe the compressed body.
+wire headers after protocol safety checks, so Content-Length may describe the compressed body.
+For H2, connection-specific headers and invalid Content-Length values are
+omitted; identical Content-Length duplicates are collapsed. Other repeated
+fields, including Set-Cookie, preserve their original order.
 Use `decode_content=False` to retain the original body bytes. Unknown or corrupt
 content encodings raise `TransportError` when decoding is enabled. No Python
 codec dependency or request worker thread is needed.
@@ -426,7 +429,7 @@ builds and audits all five native wheels, installs each in a fresh environment,
 and tests its bundled library before publication. See [packaging and
 releases](../docs/releases.md) for engine pins, source tags and publishing.
 
-## Limit physical connection lifetime (unreleased)
+## Limit physical connection lifetime
 
 See [connection lifetime (中文)](connection-lifetime.md) for Session and
 AsyncSession parameters, examples, validation and native compatibility.
