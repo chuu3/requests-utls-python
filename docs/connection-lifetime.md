@@ -30,4 +30,4 @@ async with AsyncSession(profile=profile, max_connection_age=60, connection_age_j
 
 跨语言字段对应：`max_connection_age` → Go `MaxConnectionAge` → JSON `max_connection_age_ms`；`connection_age_jitter` → Go `ConnectionAgeJitter` → JSON `connection_age_jitter_ms`。Go 使用 `time.Duration`；C ABI 仍为 1。
 
-完整 Go/native 示例见 [引擎文档](https://github.com/chuu3/requests-utls/blob/13322c4a0fe6ce7187a870408b4468d416aaeb38/docs/connection-lifetime.md)，本机集成方法见 [开发指南](development.md)。
+完整 Go/native 示例见 [引擎文档](https://github.com/chuu3/requests-utls/blob/1ea4648103ed28f20b0e551b8fa729b4773b980e/docs/connection-lifetime.md)，本机集成方法见 [开发指南](development.md)。
