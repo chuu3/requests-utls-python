@@ -52,6 +52,7 @@ HTTPS/SOCKS proxy connections are not supported.
 | --- | --- |
 | Why redirects and Cookie state are caller-owned | [Design rationale (中文)](https://github.com/chuu3/requests-utls/blob/main/docs/redirects-and-cookies.md) |
 | Sync/async requests, headers, cookies and profiles | [Usage](docs/usage.md) |
+| Limit physical connection lifetime | [Parameters and behavior (中文)](docs/connection-lifetime.md) |
 | Configure proxies and certificate trust | [Proxies](docs/proxies.md) |
 | Review test evidence | [Verification](docs/verification.md), [profile acceptance](docs/profile-acceptance.md) |
 | Develop or build wheels | [Contributing](CONTRIBUTING.md), [releases](docs/releases.md) |

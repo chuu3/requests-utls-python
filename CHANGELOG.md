@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Anonymize source identifiers in archived profile acceptance reports.
+
+- Add `max_connection_age` and `connection_age_jitter` to Session and AsyncSession,
+  with finite/range validation and native millisecond mapping.
+- Disabled by default; retains Session state and TLS resumption.
+
 ## 0.3.1 — 2026-10-02
 
 - Fix proxy CONNECT failures being classified as invalid responses when a socket

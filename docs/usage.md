@@ -425,3 +425,8 @@ complete native suite on Linux against the locked engine. The release workflow
 builds and audits all five native wheels, installs each in a fresh environment,
 and tests its bundled library before publication. See [packaging and
 releases](../docs/releases.md) for engine pins, source tags and publishing.
+
+## Limit physical connection lifetime (unreleased)
+
+See [connection lifetime (中文)](connection-lifetime.md) for Session and
+AsyncSession parameters, examples, validation and native compatibility.
