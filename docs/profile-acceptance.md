@@ -218,3 +218,6 @@ Any invalid capture, import/request failure or fingerprint mismatch produces
 exit status 1. Neither an exclusion nor a diagnostic annotation is evidence of
 a matching handshake. Live outcome counts belong in the report from a fixed
 artifact and comparator, rather than in this process definition.
+
+The archived `profile-acceptance-0.2.0.json` uses anonymous capture IDs. Source
+paths are omitted; fingerprints, checks and outcome counts are unchanged.
