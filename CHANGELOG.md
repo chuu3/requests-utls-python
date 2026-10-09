@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.2 — 2026-10-09
+
+- Use the engine with x/net v0.60.0 HTTP/2 security fixes and Go 1.27.2. H2
+  responses omit unsafe framing headers while preserving normal duplicates.
+
+- Anonymize source identifiers in archived profile acceptance reports.
+
+- Add `max_connection_age` and `connection_age_jitter` to Session and AsyncSession,
+  with finite/range validation and native millisecond mapping.
+- Disabled by default; retains Session state and TLS resumption.
+- Restore H2 idle cleanup after response bodies and canceled reservations finish.
+- Bundle engine `c2505382021bfcd62bc1685080610d28bd87bde3`; native ABI remains 1.
+
 ## 0.3.1 — 2026-10-02
 
 - Fix proxy CONNECT failures being classified as invalid responses when a socket

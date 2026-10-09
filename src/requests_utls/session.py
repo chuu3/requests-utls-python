@@ -108,6 +108,8 @@ class _BaseSession:
         tls_handshake_timeout=None,
         response_header_timeout=None,
         body_timeout=None,
+        max_connection_age=0,
+        connection_age_jitter=0,
         max_concurrent_requests=64,
         max_pending_requests=256,
         max_response_bytes=64 * 1024 * 1024,
@@ -145,6 +147,22 @@ class _BaseSession:
                     config[name + "_ms"] = _timeout_ms(value)
                 except InvalidRequestError:
                     raise InvalidRequestError(f"{name} must be a positive number of seconds or None") from None
+        age_values = []
+        for name, value in (("max_connection_age", max_connection_age),
+                            ("connection_age_jitter", connection_age_jitter)):
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or value < 0 or isinstance(value, float) and not math.isfinite(value)):
+                raise InvalidRequestError(f"{name} must be finite nonnegative seconds")
+            age_values.append(0 if value == 0 else _timeout_ms(value))
+        age, jitter = age_values
+        if ((max_connection_age == 0 and connection_age_jitter != 0)
+                or (max_connection_age > 0 and connection_age_jitter >= max_connection_age)
+                or (age > 0 and jitter >= age)):
+            raise InvalidRequestError("require 0 <= connection_age_jitter < max_connection_age (also after rounding to milliseconds), or both zero")
+        if age:
+            # Keep the disabled wire configuration compatible with older engines.
+            config["max_connection_age_ms"] = age
+            config["connection_age_jitter_ms"] = jitter
         secrets = []
         if proxy is not None:
             if not isinstance(proxy, str):

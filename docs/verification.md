@@ -264,3 +264,44 @@ python examples/peetcheck.py \
 ```
 
 Add `--duplicate-cookies` to repeat the separate Cookie field probe.
+
+## Connection lifetime — local verification, 2026-10-09
+
+The connection-lifetime API was tested against the shared library and test peer
+built from the paired local Go changes. The complete Python suite passed:
+**425 passed, 1 skipped** (the installed-wheel-only test). After the final native
+input-validation change, lifetime-specific tests passed again: **37 passed**.
+
+For sibling Go and Python checkouts, build from the Go repository with
+`make shared testpeer`, then run from this Python repository on macOS:
+
+```sh
+REQUESTS_UTLS_LIBRARY=../requests-utls/dist/librequests_utls.dylib \
+REQUESTS_UTLS_TEST_PEER=../requests-utls/bin/requests-utls-testpeer \
+python -m pytest -q
+```
+
+On Linux use the corresponding `.so`; on Windows use `.dll` and the `.exe` peer.
+`tests/test_connection_lifetime.py` covers both Session classes, rejection before
+native loading, seconds-to-milliseconds mapping and sub-millisecond rounding,
+real H2/H1 connection identities, Cookie configuration and accepted TLS resumption
+across rotation. The paired Go suite covers draining, cancellation, stream
+reservations, POST execution counts, and three synthetic 100-second proxy cycles.
+
+This validates the local source and native artifacts.
+`engine.lock.json` pins the matching implementation commit. This
+public record covers synthetic local tests only.
+
+
+## Security update and three-pass review — 2026-10-09
+
+The engine pin includes x/net v0.60.0 and the corresponding copied H2 fixes,
+built with Go 1.27.2. The full suite against that engine passed again:
+**425 passed, 1 skipped** (the installed-wheel-only test).
+
+Three review passes checked the paired transport/security implementation,
+Python/native validation and compatibility, and documentation/build pins and
+committed-content privacy. Normal repeated response headers retain their order;
+unsafe H2 framing headers are sanitized in the ordered output too. Session
+parameters and ABI version 1 are unchanged by the security update. The engine
+verification record documents the scan and the unused OpenPGP module notice.

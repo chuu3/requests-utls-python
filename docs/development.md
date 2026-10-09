@@ -20,7 +20,7 @@ python -m pytest -q \
   tests/test_response_cookies.py tests/test_request_headers.py \
   tests/test_profile_acceptance.py tests/test_build_backend.py \
   tests/test_bundled.py tests/test_finalize_wheel.py \
-  tests/test_validation.py tests/test_async_lifecycle.py
+  tests/test_validation.py tests/test_async_lifecycle.py tests/test_connection_lifetime.py
 ```
 
 On Windows, activate `.venv\Scripts\Activate.ps1` in PowerShell instead.

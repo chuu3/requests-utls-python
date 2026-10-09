@@ -6,7 +6,7 @@ the engine's dependency licenses. Installation does not require Go, a compiler,
 GitHub access, or a separately downloaded engine. Python and Go remain separate
 projects, connected through CFFI ABI 1.
 
-This is a **0.3.1 release**. Release notes and development changes are listed
+This is a **0.3.2 release**. Release notes and development changes are listed
 in the [changelog](../CHANGELOG.md). The client supports
 HTTP/2 and HTTP/1.1, immutable Session defaults,
 request-level `headers_order`, ordered duplicate headers, concurrent sync and
@@ -343,7 +343,10 @@ values in reverse order, with at most four non-`identity` decoding layers.
 Exceeding that depth raises `TransportError` when decoding is enabled.
 `content`, `text` and `json()` use the decoded body;
 `decoded` is true when a coding was removed. Response headers remain the
-original wire headers, so Content-Length may describe the compressed body.
+wire headers after protocol safety checks, so Content-Length may describe the compressed body.
+For H2, connection-specific headers and invalid Content-Length values are
+omitted; identical Content-Length duplicates are collapsed. Other repeated
+fields, including Set-Cookie, preserve their original order.
 Use `decode_content=False` to retain the original body bytes. Unknown or corrupt
 content encodings raise `TransportError` when decoding is enabled. No Python
 codec dependency or request worker thread is needed.
@@ -425,3 +428,8 @@ complete native suite on Linux against the locked engine. The release workflow
 builds and audits all five native wheels, installs each in a fresh environment,
 and tests its bundled library before publication. See [packaging and
 releases](../docs/releases.md) for engine pins, source tags and publishing.
+
+## Limit physical connection lifetime
+
+See [connection lifetime (中文)](connection-lifetime.md) for Session and
+AsyncSession parameters, examples, validation and native compatibility.
