@@ -67,7 +67,7 @@ jobs:
       - name: Install MinGW-w64 UCRT compiler
         if: runner.os == 'Windows'
         id: msys2
-        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
         with:
           msystem: UCRT64
           update: true
@@ -116,7 +116,7 @@ jobs:
           GOTOOLCHAIN: local
         run: python scripts/ci_wheel.py build --engine-dir engine --output-dir ci-dist --platform "${{ env.WHEEL_PLATFORM }}"
       - name: Upload the tested wheel
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: wheel-${{ matrix.platform }}
           path: ci-dist/wheelhouse/*.whl
@@ -141,7 +141,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: wheel-*
           path: release-dist
